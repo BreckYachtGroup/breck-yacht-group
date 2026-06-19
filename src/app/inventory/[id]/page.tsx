@@ -1,0 +1,118 @@
+import { supabase, type Vessel } from '@/lib/supabase'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+
+async function getVessel(slug: string): Promise<Vessel | null> {
+  const { data } = await supabase
+    .from('vessels')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  return data
+}
+
+export default async function VesselDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const vessel = await getVessel(id)
+
+  if (!vessel) notFound()
+
+  return (
+    <div className="bg-white min-h-screen">
+      {/* Image Gallery */}
+      <div style={{ backgroundColor: '#0c1f3f' }} className="pt-6 pb-0">
+        {vessel.images?.length > 0 ? (
+          <div className="max-w-7xl mx-auto px-6">
+            <img
+              src={vessel.images[0]}
+              alt={vessel.name}
+              className="w-full object-cover"
+              style={{ maxHeight: '550px' }}
+            />
+            {vessel.images.length > 1 && (
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {vessel.images.slice(1, 5).map((img, i) => (
+                  <img key={i} src={img} alt={`${vessel.name} ${i + 2}`} className="w-full h-28 object-cover" loading="lazy" />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="h-72 flex items-center justify-center">
+            <span className="text-white/30 tracking-widest uppercase text-sm">No Photos Available</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* Left: Details */}
+        <div className="lg:col-span-2">
+          <Link href="/inventory" className="text-xs tracking-widest uppercase text-gray-400 hover:text-gray-600 mb-6 inline-block">
+            ← Back to Inventory
+          </Link>
+          <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>
+            {vessel.year} {vessel.make} {vessel.model}
+          </p>
+          <h1 className="text-4xl font-bold mb-2" style={{ color: '#0c1f3f' }}>{vessel.name}</h1>
+          <p className="text-gray-400 mb-8">{vessel.location}</p>
+
+          <p className="text-gray-600 leading-relaxed mb-10">{vessel.description}</p>
+
+          {/* Specs Grid */}
+          <h2 className="text-xl font-bold mb-6" style={{ color: '#0c1f3f' }}>Vessel Specifications</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-0 border border-gray-100">
+            {[
+              { label: 'Year', value: vessel.year },
+              { label: 'Make', value: vessel.make },
+              { label: 'Model', value: vessel.model },
+              { label: 'Length', value: `${vessel.length_ft} ft` },
+              { label: 'Beam', value: `${vessel.beam_ft} ft` },
+              { label: 'Engine Hours', value: vessel.hours?.toLocaleString() },
+              { label: 'Fuel Type', value: vessel.fuel_type },
+              { label: 'Engine', value: vessel.engine_details },
+              { label: 'Status', value: vessel.status === 'under_contract' ? 'Under Contract' : vessel.status.charAt(0).toUpperCase() + vessel.status.slice(1) },
+            ].map((spec) => (
+              <div key={spec.label} className="border border-gray-100 px-5 py-4">
+                <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">{spec.label}</p>
+                <p className="font-semibold text-sm" style={{ color: '#0c1f3f' }}>{spec.value || '—'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Price + Contact */}
+        <div>
+          <div className="sticky top-24 border border-gray-100 p-8 shadow-sm">
+            <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">Asking Price</p>
+            <p className="text-4xl font-bold mb-6" style={{ color: '#0c1f3f' }}>
+              ${vessel.price.toLocaleString()}
+            </p>
+
+            <p className="text-sm font-semibold tracking-wider uppercase mb-4" style={{ color: '#0c1f3f' }}>
+              Inquire About This Vessel
+            </p>
+            <form className="flex flex-col gap-3">
+              <input type="text" placeholder="Your Name" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
+              <input type="email" placeholder="Email Address" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
+              <input type="tel" placeholder="Phone Number" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
+              <textarea
+                placeholder="Message"
+                rows={3}
+                defaultValue={`I'm interested in the ${vessel.year} ${vessel.name}.`}
+                className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none w-full"
+              />
+              <button
+                type="submit"
+                className="py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90 w-full"
+                style={{ backgroundColor: '#c9a84c' }}
+              >
+                Send Inquiry
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
