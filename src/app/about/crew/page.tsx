@@ -4,7 +4,7 @@ const crew = [
   {
     name: 'Austin Huebner',
     title: 'Founder & Lead Broker',
-    bio: 'With years of experience in the luxury performance boat market, Austin founded Breck Yacht Group with a vision to bring a higher standard of service to yacht brokerage.',
+    bio: 'I am a professional yacht broker and entrepreneur in Palm Beach, Florida. As a qualified yacht broker, I plan to establish myself as the tech-forward leader in the luxury vessel market. My career is defined by my deep understanding of boat performance, valuation, and restoration. I have spent significant time working on and running high-performance center consoles and luxury yachts. I have launched Breck Yacht Group as a hybrid platform designed to bridge the gap between traditional white-glove brokerage services and the efficiency of high-volume online boat sales.',
     photo: '', // add a photo URL here
   },
   // Add more crew members here
