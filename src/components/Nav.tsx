@@ -44,13 +44,13 @@ export default function Nav() {
     <nav style={{ backgroundColor: '#0c1f3f' }} className="fixed top-0 left-0 right-0 z-50 px-6 py-5">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" onClick={closeAll} className="text-white text-lg font-bold tracking-widest uppercase">
+        <Link href="/" onClick={() => { closeAll(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-white text-lg font-bold tracking-widest uppercase">
           Breck Yacht Group
         </Link>
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
+          <Link href="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
             Home
           </Link>
 
@@ -148,7 +148,7 @@ export default function Nav() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden mt-4 pb-4 flex flex-col" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <Link href="/" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <Link href="/" onClick={() => { closeAll(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             Home
           </Link>
           <Link href="/inventory" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
