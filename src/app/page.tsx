@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getFeaturedListings, type Listing } from '@/lib/listings'
+import HeroCarousel from '@/components/HeroCarousel'
 
 async function getFeaturedVessels(): Promise<Listing[]> {
   return getFeaturedListings()
@@ -11,41 +12,7 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero */}
-      <section
-        className="relative flex items-center justify-center text-center text-white"
-        style={{
-          minHeight: '92vh',
-          background: 'linear-gradient(to bottom, #0c1f3f 0%, #1a3a6b 60%, #0c1f3f 100%)',
-        }}
-      >
-        <div className="px-6 max-w-3xl mx-auto">
-          <p className="text-xs tracking-[0.4em] uppercase mb-6" style={{ color: '#c9a84c' }}>
-            Premium Yacht Brokerage
-          </p>
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            Find Your Perfect<br />Performance Vessel
-          </h1>
-          <p className="text-white/70 text-lg mb-10 leading-relaxed">
-            Breck Yacht Group specializes in the finest center consoles and sportfish vessels on the market. Browse our curated inventory or speak with a broker today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/inventory"
-              className="px-8 py-4 text-sm tracking-widest uppercase font-semibold text-white transition-colors"
-              style={{ backgroundColor: '#c9a84c' }}
-            >
-              View Inventory
-            </Link>
-            <a
-              href="#contact"
-              className="px-8 py-4 text-sm tracking-widest uppercase font-semibold border border-white/40 text-white hover:bg-white/10 transition-colors"
-            >
-              Contact a Broker
-            </a>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel />
 
       {/* Featured Vessels */}
       {featured.length > 0 && (
