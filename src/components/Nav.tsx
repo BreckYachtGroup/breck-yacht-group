@@ -6,16 +6,20 @@ import { useState } from 'react'
 export default function Nav() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
+  const [sellOpen, setSellOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false)
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false)
+  const [mobileSellOpen, setMobileSellOpen] = useState(false)
 
   const closeAll = () => {
     setMobileOpen(false)
     setAboutOpen(false)
     setServicesOpen(false)
+    setSellOpen(false)
     setMobileAboutOpen(false)
     setMobileServicesOpen(false)
+    setMobileSellOpen(false)
   }
 
   return (
@@ -61,6 +65,30 @@ export default function Nav() {
                 </Link>
                 <Link href="/services/buying-guide" onClick={closeAll} className="block px-5 py-3 text-sm tracking-wider uppercase text-white/80 hover:text-white hover:bg-white/10 transition-colors">
                   Buying Guide
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Sell Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setSellOpen(true)}
+            onMouseLeave={() => setSellOpen(false)}
+          >
+            <button className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors flex items-center gap-1">
+              Sell <span className="text-xs">▾</span>
+            </button>
+            {sellOpen && (
+              <div
+                className="absolute top-full left-0 mt-2 w-48 shadow-lg"
+                style={{ backgroundColor: '#0c1f3f', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <Link href="/sell/value-my-vessel" onClick={closeAll} className="block px-5 py-3 text-sm tracking-wider uppercase text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                  Value My Vessel
+                </Link>
+                <Link href="/sell/sellers-guide" onClick={closeAll} className="block px-5 py-3 text-sm tracking-wider uppercase text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                  Seller&apos;s Guide
                 </Link>
               </div>
             )}
@@ -135,6 +163,22 @@ export default function Nav() {
                 <Link href="/services/insurance" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">Insurance</Link>
                 <Link href="/services/yacht-management" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">Yacht Management</Link>
                 <Link href="/services/buying-guide" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">Buying Guide</Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Sell */}
+          <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <button
+              className="w-full text-left px-2 py-4 text-sm tracking-wider uppercase text-white/80 flex justify-between"
+              onClick={() => setMobileSellOpen(!mobileSellOpen)}
+            >
+              Sell <span>{mobileSellOpen ? '▴' : '▾'}</span>
+            </button>
+            {mobileSellOpen && (
+              <div className="pl-4 pb-2">
+                <Link href="/sell/value-my-vessel" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">Value My Vessel</Link>
+                <Link href="/sell/sellers-guide" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">Seller&apos;s Guide</Link>
               </div>
             )}
           </div>
