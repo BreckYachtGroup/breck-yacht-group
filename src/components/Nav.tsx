@@ -24,6 +24,10 @@ export default function Nav() {
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8">
+          <Link href="/" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
+            Home
+          </Link>
+
           <Link href="/inventory" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
             Inventory
           </Link>
@@ -76,6 +80,9 @@ export default function Nav() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden mt-4 pb-4 flex flex-col" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <Link href="/" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            Home
+          </Link>
           <Link href="/inventory" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             Inventory
           </Link>
