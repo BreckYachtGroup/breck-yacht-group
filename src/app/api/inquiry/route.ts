@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { name, email, phone, message, vesselName } = await req.json()
 
     await resend.emails.send({
-      from: 'Breck Yacht Group <onboarding@resend.dev>',
+      from: 'Breck Yacht Group <noreply@breckyachtgroup.com>',
       to: 'austin@breckyachtgroup.com',
       subject: `New Vessel Inquiry — ${vesselName}`,
       html: `
