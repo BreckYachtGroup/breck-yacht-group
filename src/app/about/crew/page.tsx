@@ -2,7 +2,7 @@
 
 const crew = [
   {
-    name: 'Austin Hueby',
+    name: 'Austin Huebner',
     title: 'Founder & Lead Broker',
     bio: 'With years of experience in the luxury performance boat market, Austin founded Breck Yacht Group with a vision to bring a higher standard of service to yacht brokerage.',
     photo: '', // add a photo URL here
