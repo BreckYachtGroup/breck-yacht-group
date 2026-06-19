@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 export default function Nav() {
   const [aboutOpen, setAboutOpen] = useState(false)
@@ -11,6 +11,24 @@ export default function Nav() {
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false)
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false)
   const [mobileSellOpen, setMobileSellOpen] = useState(false)
+
+  // Timers to delay closing so mouse can travel from button into dropdown
+  const aboutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const servicesTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sellTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const makeHandlers = (
+    setter: (v: boolean) => void,
+    timer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+  ) => ({
+    onMouseEnter: () => {
+      if (timer.current) clearTimeout(timer.current)
+      setter(true)
+    },
+    onMouseLeave: () => {
+      timer.current = setTimeout(() => setter(false), 100)
+    },
+  })
 
   const closeAll = () => {
     setMobileOpen(false)
@@ -41,11 +59,7 @@ export default function Nav() {
           </Link>
 
           {/* Services Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setServicesOpen(true)}
-            onMouseLeave={() => setServicesOpen(false)}
-          >
+          <div className="relative" {...makeHandlers(setServicesOpen, servicesTimer)}>
             <button className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors flex items-center gap-1">
               Services <span className="text-xs">▾</span>
             </button>
@@ -71,11 +85,7 @@ export default function Nav() {
           </div>
 
           {/* Sell Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setSellOpen(true)}
-            onMouseLeave={() => setSellOpen(false)}
-          >
+          <div className="relative" {...makeHandlers(setSellOpen, sellTimer)}>
             <button className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors flex items-center gap-1">
               Sell <span className="text-xs">▾</span>
             </button>
@@ -99,11 +109,7 @@ export default function Nav() {
           </Link>
 
           {/* About Us Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setAboutOpen(true)}
-            onMouseLeave={() => setAboutOpen(false)}
-          >
+          <div className="relative" {...makeHandlers(setAboutOpen, aboutTimer)}>
             <button className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors flex items-center gap-1">
               About Us <span className="text-xs">▾</span>
             </button>
