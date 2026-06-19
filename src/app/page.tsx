@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getFeaturedListings, type Listing } from '@/lib/listings'
 import HeroCarousel from '@/components/HeroCarousel'
+import ContactForm from '@/components/ContactForm'
 
 async function getFeaturedVessels(): Promise<Listing[]> {
   return getFeaturedListings()
@@ -67,22 +68,7 @@ export default async function HomePage() {
           <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Get In Touch</p>
           <h2 className="text-3xl font-bold mb-4" style={{ color: '#0c1f3f' }}>Speak With a Broker</h2>
           <p className="text-gray-500 mb-10">Whether you&apos;re buying or selling, our team is ready to help you navigate the market.</p>
-          <form className="flex flex-col gap-4 text-left">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input type="text" placeholder="First Name" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-              <input type="text" placeholder="Last Name" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-            </div>
-            <input type="email" placeholder="Email Address" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-            <input type="tel" placeholder="Phone Number" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
-            <textarea placeholder="What are you looking for?" rows={4} className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none" />
-            <button
-              type="submit"
-              className="py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#c9a84c' }}
-            >
-              Send Message
-            </button>
-          </form>
+          <ContactForm />
         </div>
       </section>
     </>

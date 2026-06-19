@@ -1,6 +1,7 @@
 import { getListingBySlug, type Listing } from '@/lib/listings'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import InquiryForm from '@/components/InquiryForm'
 
 async function getVessel(slug: string): Promise<Listing | null> {
   return getListingBySlug(slug)
@@ -87,24 +88,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
             <p className="text-sm font-semibold tracking-wider uppercase mb-4" style={{ color: '#0c1f3f' }}>
               Inquire About This Vessel
             </p>
-            <form className="flex flex-col gap-3">
-              <input type="text" placeholder="Your Name" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
-              <input type="email" placeholder="Email Address" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
-              <input type="tel" placeholder="Phone Number" className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 w-full" />
-              <textarea
-                placeholder="Message"
-                rows={3}
-                defaultValue={`I'm interested in the ${vessel.year} ${vessel.name}.`}
-                className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none w-full"
-              />
-              <button
-                type="submit"
-                className="py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90 w-full"
-                style={{ backgroundColor: '#c9a84c' }}
-              >
-                Send Inquiry
-              </button>
-            </form>
+            <InquiryForm vesselName={`${vessel.year} ${vessel.name}`} />
           </div>
         </div>
       </div>
