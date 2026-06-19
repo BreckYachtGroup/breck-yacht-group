@@ -28,6 +28,10 @@ export default function Nav() {
             Inventory
           </Link>
 
+          <Link href="/blog" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
+            The Log
+          </Link>
+
           {/* About Us Dropdown */}
           <div
             className="relative"
@@ -74,6 +78,9 @@ export default function Nav() {
         <div className="md:hidden mt-4 pb-4 flex flex-col" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <Link href="/inventory" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             Inventory
+          </Link>
+          <Link href="/blog" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            The Log
           </Link>
 
           {/* Mobile About Us */}
