@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 // Add your hero images here — drop files into the /public folder and list them below
+// Add more images here as you drop them into the /public folder
 const images = [
   '/hero-1.jpg',
-  '/hero-2.jpg',
-  '/hero-3.jpg',
 ]
 
 export default function HeroCarousel() {
