@@ -1,16 +1,13 @@
 import Link from 'next/link'
-import { supabase, type Vessel } from '@/lib/supabase'
+import { getAllListings, type Listing } from '@/lib/listings'
 
-async function getVessels(): Promise<Vessel[]> {
-  const { data } = await supabase
-    .from('vessels')
-    .select('*')
-    .order('created_at', { ascending: false })
-  return data ?? []
+async function getVessels(): Promise<Listing[]> {
+  return getAllListings()
 }
 
 export default async function InventoryPage() {
   const vessels = await getVessels()
+
 
   return (
     <div style={{ backgroundColor: '#f8f6f1' }} className="min-h-screen">

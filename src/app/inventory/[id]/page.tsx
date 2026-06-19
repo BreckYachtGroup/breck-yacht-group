@@ -1,14 +1,9 @@
-import { supabase, type Vessel } from '@/lib/supabase'
+import { getListingBySlug, type Listing } from '@/lib/listings'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
-async function getVessel(slug: string): Promise<Vessel | null> {
-  const { data } = await supabase
-    .from('vessels')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-  return data
+async function getVessel(slug: string): Promise<Listing | null> {
+  return getListingBySlug(slug)
 }
 
 export default async function VesselDetailPage({ params }: { params: Promise<{ id: string }> }) {

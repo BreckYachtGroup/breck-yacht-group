@@ -1,18 +1,13 @@
 import Link from 'next/link'
-import { supabase, type Vessel } from '@/lib/supabase'
+import { getFeaturedListings, type Listing } from '@/lib/listings'
 
-async function getFeaturedVessels(): Promise<Vessel[]> {
-  const { data } = await supabase
-    .from('vessels')
-    .select('*')
-    .eq('featured', true)
-    .eq('status', 'available')
-    .limit(3)
-  return data ?? []
+async function getFeaturedVessels(): Promise<Listing[]> {
+  return getFeaturedListings()
 }
 
 export default async function HomePage() {
   const featured = await getFeaturedVessels()
+
 
   return (
     <>
