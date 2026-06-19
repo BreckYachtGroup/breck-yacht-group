@@ -50,7 +50,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Article */}
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Link href="/blog" className="text-xs tracking-widest uppercase text-gray-400 hover:text-gray-600 mb-8 inline-block">
-          ← Back to The Log
+          ← Back to Captain's Log
         </Link>
 
         <div className="flex items-center gap-4 mb-4">

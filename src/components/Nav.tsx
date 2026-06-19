@@ -29,7 +29,7 @@ export default function Nav() {
           </Link>
 
           <Link href="/blog" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
-            The Log
+            Captain's Log
           </Link>
 
           {/* About Us Dropdown */}
@@ -80,7 +80,7 @@ export default function Nav() {
             Inventory
           </Link>
           <Link href="/blog" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            The Log
+            Captain's Log
           </Link>
 
           {/* Mobile About Us */}

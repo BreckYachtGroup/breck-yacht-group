@@ -32,7 +32,7 @@ export default async function BlogPage() {
       {/* Header */}
       <div style={{ backgroundColor: '#0c1f3f' }} className="py-20 text-center text-white">
         <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>News & Insights</p>
-        <h1 className="text-4xl font-bold">The Log</h1>
+        <h1 className="text-4xl font-bold">Captain's Log</h1>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-16">
