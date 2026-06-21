@@ -1,46 +1,67 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-// Add your hero images here — drop files into the /public folder and list them below
-// Add more images here as you drop them into the /public folder
-const images = [
-  '/hero-1.jpg',
+// Desktop: video only
+const VIDEO_SRC = '/Sportsmanvid2.mp4'
+
+// Mobile slides — add more images here as you get them
+const mobileImages = [
+  '/hero-1.jpg', // electronics photo (placeholder until boat-running photo is added)
 ]
 
-export default function HeroCarousel() {
-  const [current, setCurrent] = useState(0)
+const overlay = 'linear-gradient(to bottom, rgba(12,31,63,0.55) 0%, rgba(12,31,63,0.35) 50%, rgba(12,31,63,0.65) 100%)'
 
-  // Auto-advance every 5 seconds
+export default function HeroCarousel() {
+  const [mobileCurrent, setMobileCurrent] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Auto-advance mobile slides every 5 seconds (only matters once 2nd image is added)
   useEffect(() => {
+    if (mobileImages.length <= 1) return
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length)
+      setMobileCurrent((prev) => (prev + 1) % mobileImages.length)
     }, 5000)
     return () => clearInterval(timer)
   }, [])
 
   return (
     <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
-      {/* Images */}
-      {images.map((src, i) => (
-        <div
-          key={src}
-          className="absolute inset-0 transition-opacity duration-1000"
-          style={{ opacity: i === current ? 1 : 0 }}
-        >
-          <img
-            src={src}
-            alt={`Breck Yacht Group hero ${i + 1}`}
-            className="w-full h-full object-cover"
-          />
-          {/* Dark overlay so text is readable over photos */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(12,31,63,0.6) 0%, rgba(12,31,63,0.4) 50%, rgba(12,31,63,0.7) 100%)' }} />
-        </div>
-      ))}
 
-      {/* Text Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center text-white px-6" style={{ minHeight: '92vh' }}>
+      {/* === DESKTOP: Video only === */}
+      <div className="absolute inset-0 hidden md:block">
+        <video
+          ref={videoRef}
+          src={VIDEO_SRC}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0" style={{ background: overlay }} />
+      </div>
+
+      {/* === MOBILE: Static image slides === */}
+      <div className="absolute inset-0 md:hidden">
+        {mobileImages.map((src, i) => (
+          <div
+            key={src}
+            className="absolute inset-0 transition-opacity duration-1000"
+            style={{ opacity: i === mobileCurrent ? 1 : 0 }}
+          >
+            <img src={src} alt={`Breck Yacht Group ${i + 1}`} className="w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: overlay }} />
+          </div>
+        ))}
+      </div>
+
+      {/* === Text overlay === */}
+      <div
+        className="relative z-10 flex flex-col items-center justify-center text-center text-white px-6"
+        style={{ minHeight: '92vh' }}
+      >
         <p className="text-xs tracking-[0.4em] uppercase mb-6" style={{ color: '#c9a84c' }}>
           Premium Yacht Brokerage
         </p>
@@ -67,18 +88,20 @@ export default function HeroCarousel() {
         </div>
       </div>
 
-      {/* Dot indicators */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-10">
-        {images.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className="w-2 h-2 rounded-full transition-all duration-300"
-            style={{ backgroundColor: i === current ? '#c9a84c' : 'rgba(255,255,255,0.4)' }}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
-      </div>
+      {/* === Mobile dot indicators (only shown when multiple slides) === */}
+      {mobileImages.length > 1 && (
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-10 md:hidden">
+          {mobileImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setMobileCurrent(i)}
+              className="w-2 h-2 rounded-full transition-all duration-300"
+              style={{ backgroundColor: i === mobileCurrent ? '#c9a84c' : 'rgba(255,255,255,0.4)' }}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
