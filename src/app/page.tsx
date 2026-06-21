@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { getFeaturedListings, type Listing } from '@/lib/listings'
 import HeroCarousel from '@/components/HeroCarousel'
