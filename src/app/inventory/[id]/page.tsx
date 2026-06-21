@@ -2,6 +2,7 @@ import { getListingBySlug, type Listing } from '@/lib/listings'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import InquiryForm from '@/components/InquiryForm'
+import VesselGallery from '@/components/VesselGallery'
 
 async function getVessel(slug: string): Promise<Listing | null> {
   return getListingBySlug(slug)
@@ -16,28 +17,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
   return (
     <div className="bg-white min-h-screen">
       {/* Image Gallery */}
-      <div style={{ backgroundColor: '#0c1f3f' }} className="pt-6 pb-0">
-        {vessel.images?.length > 0 ? (
-          <div className="max-w-7xl mx-auto px-6">
-            <img
-              src={vessel.images[0]}
-              alt={vessel.name}
-              className="w-full object-cover"
-              style={{ maxHeight: '550px' }}
-            />
-            {vessel.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                {vessel.images.slice(1, 5).map((img, i) => (
-                  <img key={i} src={img} alt={`${vessel.name} ${i + 2}`} className="w-full h-28 object-cover" loading="lazy" />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="h-72 flex items-center justify-center">
-            <span className="text-white/30 tracking-widest uppercase text-sm">No Photos Available</span>
-          </div>
-        )}
+      <VesselGallery images={vessel.images ?? []} name={vessel.name} />
       </div>
 
       {/* Content */}
