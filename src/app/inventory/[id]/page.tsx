@@ -18,7 +18,6 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
     <div className="bg-white min-h-screen">
       {/* Image Gallery */}
       <VesselGallery images={vessel.images ?? []} name={vessel.name} />
-      </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
