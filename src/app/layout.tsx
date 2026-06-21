@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Nav from '@/components/Nav'
+import { Analytics } from '@vercel/analytics/react'
 
 export const metadata: Metadata = {
   title: 'Breck Yacht Group | Luxury Performance Vessels',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer style={{ backgroundColor: '#0c1f3f' }} className="text-white/50 text-center py-8 text-sm tracking-widest uppercase">
           <p>© {new Date().getFullYear()} Breck Yacht Group · All Rights Reserved</p>
         </footer>
+        <Analytics />
       </body>
     </html>
   )
