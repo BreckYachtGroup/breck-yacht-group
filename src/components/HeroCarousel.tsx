@@ -48,8 +48,8 @@ export default function HeroCarousel() {
   return (
     <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
 
-      {/* === DESKTOP: Video only === */}
-      <div className="absolute inset-0 hidden md:block">
+      {/* === VIDEO: All screen sizes === */}
+      <div className="absolute inset-0">
         <video
           ref={videoRef}
           src={VIDEO_SRC}
@@ -62,20 +62,6 @@ export default function HeroCarousel() {
           style={{ opacity: videoOpacity, transition: 'opacity 0.6s ease' }}
         />
         <div className="absolute inset-0" style={{ background: overlay }} />
-      </div>
-
-      {/* === MOBILE: Static image slides === */}
-      <div className="absolute inset-0 md:hidden">
-        {mobileImages.map((src, i) => (
-          <div
-            key={src}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: i === mobileCurrent ? 1 : 0 }}
-          >
-            <img src={src} alt={`Breck Yacht Group ${i + 1}`} className="w-full h-full object-cover" />
-            <div className="absolute inset-0" style={{ background: overlay }} />
-          </div>
-        ))}
       </div>
 
       {/* === Text overlay === */}
