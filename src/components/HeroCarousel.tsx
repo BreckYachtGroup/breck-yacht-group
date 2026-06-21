@@ -15,6 +15,7 @@ const overlay = 'linear-gradient(to bottom, rgba(12,31,63,0.55) 0%, rgba(12,31,6
 
 export default function HeroCarousel() {
   const [mobileCurrent, setMobileCurrent] = useState(0)
+  const [videoOpacity, setVideoOpacity] = useState(1)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Auto-advance mobile slides every 5 seconds (only matters once 2nd image is added)
@@ -26,6 +27,24 @@ export default function HeroCarousel() {
     return () => clearInterval(timer)
   }, [])
 
+  // Smooth loop: fade out near end, restart, fade back in
+  const handleTimeUpdate = () => {
+    const video = videoRef.current
+    if (!video) return
+    const remaining = video.duration - video.currentTime
+    if (remaining < 0.8) {
+      setVideoOpacity(0)
+    }
+  }
+
+  const handleEnded = () => {
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = 0
+    video.play().catch(() => {})
+    setTimeout(() => setVideoOpacity(1), 100)
+  }
+
   return (
     <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
 
@@ -36,9 +55,11 @@ export default function HeroCarousel() {
           src={VIDEO_SRC}
           autoPlay
           muted
-          loop
           playsInline
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
           className="w-full h-full object-cover"
+          style={{ opacity: videoOpacity, transition: 'opacity 0.6s ease' }}
         />
         <div className="absolute inset-0" style={{ background: overlay }} />
       </div>
