@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Nav from '@/components/Nav'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
   title: 'Breck Yacht Group | Luxury Performance Vessels',
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p>© {new Date().getFullYear()} Breck Yacht Group · All Rights Reserved</p>
         </footer>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
