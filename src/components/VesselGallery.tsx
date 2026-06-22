@@ -28,7 +28,7 @@ export default function VesselGallery({ images, name }: { images: string[], name
         <img
           src={images[activeIndex]}
           alt={`${name} - photo ${activeIndex + 1}`}
-          className="w-full object-cover transition-opacity duration-300"
+          className="w-full object-contain transition-opacity duration-300"
           style={{ maxHeight: '580px' }}
         />
         {/* Photo count badge */}
