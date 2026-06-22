@@ -76,9 +76,9 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       <div>
         <label className={labelClass}>Year</label>
         <div className="flex gap-2">
-          <input type="number" placeholder="No Min" value={minYear}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minYear}
             onChange={e => setMinYear(e.target.value)} className={inputClass} />
-          <input type="number" placeholder="No Max" value={maxYear}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxYear}
             onChange={e => setMaxYear(e.target.value)} className={inputClass} />
         </div>
       </div>
@@ -87,9 +87,9 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       <div>
         <label className={labelClass}>Length (ft)</label>
         <div className="flex gap-2">
-          <input type="number" placeholder="No Min" value={minLength}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minLength}
             onChange={e => setMinLength(e.target.value)} className={inputClass} />
-          <input type="number" placeholder="No Max" value={maxLength}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxLength}
             onChange={e => setMaxLength(e.target.value)} className={inputClass} />
         </div>
       </div>
@@ -98,9 +98,9 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       <div>
         <label className={labelClass}>Price (USD)</label>
         <div className="flex gap-2">
-          <input type="number" placeholder="No Min" value={minPrice}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minPrice}
             onChange={e => setMinPrice(e.target.value)} className={inputClass} />
-          <input type="number" placeholder="No Max" value={maxPrice}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxPrice}
             onChange={e => setMaxPrice(e.target.value)} className={inputClass} />
         </div>
       </div>
