@@ -3,9 +3,26 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import InquiryForm from '@/components/InquiryForm'
 import VesselGallery from '@/components/VesselGallery'
+import type { Metadata } from 'next'
 
 async function getVessel(slug: string): Promise<Listing | null> {
   return getListingBySlug(slug)
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const vessel = await getVessel(id)
+  if (!vessel) return {}
+
+  return {
+    title: `${vessel.year} ${vessel.name} for Sale | Breck Yacht Group`,
+    description: `${vessel.year} ${vessel.make} ${vessel.model}, ${vessel.length_ft}ft, ${vessel.hours?.toLocaleString()} hours. Located in ${vessel.location}. Asking $${vessel.price.toLocaleString()}. Contact Breck Yacht Group in Palm Beach, FL.`,
+    openGraph: {
+      title: `${vessel.year} ${vessel.name} for Sale`,
+      description: `${vessel.year} ${vessel.make} ${vessel.model} — $${vessel.price.toLocaleString()} — ${vessel.location}`,
+      images: vessel.images?.[0] ? [vessel.images[0]] : [],
+    },
+  }
 }
 
 export default async function VesselDetailPage({ params }: { params: Promise<{ id: string }> }) {
