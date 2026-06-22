@@ -10,6 +10,20 @@ export const metadata: Metadata = {
   verification: {
     google: 'WZWZICCJm0Mz9BqL2h0bIiq5o7wBCeTCXPnNC2OrBHE',
   },
+  openGraph: {
+    title: 'Breck Yacht Group | Luxury Performance Vessels',
+    description: 'Premium yacht brokerage specializing in luxury center consoles and sportfish vessels. Based in Palm Beach, FL.',
+    url: 'https://www.breckyachtgroup.com',
+    siteName: 'Breck Yacht Group',
+    images: [{ url: 'https://i.imgur.com/G3Iiowt.jpg', width: 1200, height: 630, alt: 'Breck Yacht Group' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Breck Yacht Group | Luxury Performance Vessels',
+    description: 'Premium yacht brokerage specializing in luxury center consoles and sportfish vessels.',
+    images: ['https://i.imgur.com/G3Iiowt.jpg'],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
