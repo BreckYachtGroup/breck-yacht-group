@@ -46,7 +46,7 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
+    <section className="relative overflow-hidden" style={{ minHeight: '92vh', height: '92vh' }}>
 
       {/* === VIDEO: All screen sizes === */}
       <div className="absolute inset-0">
