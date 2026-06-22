@@ -62,7 +62,7 @@ export default function VesselGallery({ images, name }: { images: string[], name
           {images.map((src, i) => (
             <button
               key={i}
-              onClick={() => setActiveIndex(i)}
+              onClick={() => { setActiveIndex(i); setLightboxOpen(true) }}
               className="shrink-0 overflow-hidden transition-all duration-200"
               style={{
                 width: '80px',
@@ -81,37 +81,46 @@ export default function VesselGallery({ images, name }: { images: string[], name
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.95)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.97)' }}
           onClick={() => setLightboxOpen(false)}
         >
+          {/* Close button */}
           <button
-            className="absolute top-4 right-4 text-white text-3xl w-10 h-10 flex items-center justify-center"
+            className="absolute top-4 right-4 text-white text-4xl w-12 h-12 flex items-center justify-center z-10"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onClick={() => setLightboxOpen(false)}
           >
             ×
           </button>
+
+          {/* Full-size image — fills as much screen as possible */}
+          <img
+            src={images[activeIndex]}
+            alt={`${name} - photo ${activeIndex + 1}`}
+            className="w-full h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Arrows overlaid on image */}
           {images.length > 1 && (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); prev() }}
-                className="absolute left-4 text-white text-5xl px-4 py-2"
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-5xl w-12 h-12 flex items-center justify-center z-10"
+                style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
               >
                 ‹
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); next() }}
-                className="absolute right-4 text-white text-5xl px-4 py-2"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-5xl w-12 h-12 flex items-center justify-center z-10"
+                style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
               >
                 ›
               </button>
             </>
           )}
-          <img
-            src={images[activeIndex]}
-            alt={`${name} - photo ${activeIndex + 1}`}
-            className="max-w-full max-h-screen object-contain px-16"
-            onClick={(e) => e.stopPropagation()}
-          />
+
           <p className="absolute bottom-4 text-white/50 text-sm">{activeIndex + 1} / {images.length}</p>
         </div>
       )}
