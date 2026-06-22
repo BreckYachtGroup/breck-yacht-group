@@ -66,7 +66,7 @@ export default function HeroCarousel() {
 
       {/* === Text overlay === */}
       <div
-        className="relative z-10 flex flex-col items-center justify-between text-center text-white px-6 pt-32 md:pt-28 pb-16"
+        className="relative z-10 flex flex-col items-center justify-between text-center text-white px-6 pt-28 md:pt-28 pb-20 md:pb-16"
         style={{ minHeight: '92vh' }}
       >
         {/* Top: title */}
@@ -81,7 +81,7 @@ export default function HeroCarousel() {
 
         {/* Bottom: description + buttons */}
         <div>
-          <p className="text-white/80 text-lg mb-8 leading-relaxed max-w-2xl">
+          <p className="text-white/80 text-sm md:text-lg mb-8 leading-relaxed max-w-2xl">
             Breck Yacht Group specializes in the finest center consoles and sportfish vessels on the market. Browse our curated inventory or speak with a broker today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
