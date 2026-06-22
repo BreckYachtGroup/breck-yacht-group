@@ -16,7 +16,13 @@ const overlay = 'linear-gradient(to bottom, rgba(12,31,63,0.55) 0%, rgba(12,31,6
 export default function HeroCarousel() {
   const [mobileCurrent, setMobileCurrent] = useState(0)
   const [videoOpacity, setVideoOpacity] = useState(1)
+  const [heroHeight, setHeroHeight] = useState('92svh')
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Lock hero height to initial window.innerHeight so address bar showing/hiding doesn't move content
+  useEffect(() => {
+    setHeroHeight(`${Math.round(window.innerHeight * 0.92)}px`)
+  }, [])
 
   // Auto-advance mobile slides every 5 seconds (only matters once 2nd image is added)
   useEffect(() => {
@@ -46,7 +52,7 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '92svh' }}>
+    <section className="relative overflow-hidden" style={{ minHeight: heroHeight }}>
 
       {/* === VIDEO: All screen sizes === */}
       <div className="absolute inset-0">
@@ -65,7 +71,7 @@ export default function HeroCarousel() {
       </div>
 
       {/* Spacer to hold section height in document flow — min 600px for small phones */}
-      <div className="min-h-[600px]" style={{ minHeight: '92svh' }} aria-hidden="true" />
+      <div style={{ minHeight: heroHeight }} aria-hidden="true" />
 
       {/* Title — pinned to top of section */}
       <div className="absolute z-10 left-0 right-0 text-center text-white px-6" style={{ top: '80px' }}>
