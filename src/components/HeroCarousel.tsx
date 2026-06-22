@@ -72,15 +72,14 @@ export default function HeroCarousel() {
         <p className="text-xs tracking-[0.4em] uppercase mb-4" style={{ color: '#c9a84c' }}>
           Premium Yacht Brokerage
         </p>
-        <h1 className="text-3xl md:text-6xl font-bold leading-tight">
+        <h1 className="text-2xl md:text-6xl font-bold leading-tight">
           Find Your Perfect<br />Performance Vessel
         </h1>
       </div>
 
       {/* Description + buttons — pinned to bottom of section */}
       <div className="absolute z-10 left-0 right-0 text-center text-white px-6" style={{ bottom: '40px' }}>
-        {/* Description hidden on mobile — too cramped */}
-        <p className="hidden md:block text-white/80 text-lg mb-6 leading-relaxed max-w-2xl mx-auto">
+        <p className="text-white/80 text-sm md:text-lg mb-6 leading-relaxed max-w-2xl mx-auto">
           Breck Yacht Group specializes in the finest center consoles and sportfish vessels on the market. Browse our curated inventory or speak with a broker today.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
