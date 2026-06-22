@@ -7,6 +7,9 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 export const metadata: Metadata = {
   title: 'Breck Yacht Group | Luxury Performance Vessels',
   description: 'Premium yacht brokerage specializing in luxury center consoles and sportfish vessels.',
+  verification: {
+    google: 'WZWZICCJm0Mz9BqL2h0bIiq5o7wBCeTCXPnNC2OrBHE',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
