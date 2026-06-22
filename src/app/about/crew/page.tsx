@@ -28,7 +28,7 @@ export default function CrewPage() {
                 <img
                   src={member.photo}
                   alt={member.name}
-                  className="w-28 h-28 rounded-full object-cover mx-auto mb-6"
+                  className="w-28 h-28 rounded-full object-cover object-top mx-auto mb-6"
                 />
               ) : (
                 <div
