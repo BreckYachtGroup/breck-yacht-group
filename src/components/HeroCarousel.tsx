@@ -64,11 +64,8 @@ export default function HeroCarousel() {
         <div className="absolute inset-0" style={{ background: overlay }} />
       </div>
 
-      {/* Invisible spacer so the section takes up space in the document flow */}
-      <div style={{ minHeight: '92vh' }} aria-hidden="true" />
-
-      {/* === Text overlay — fills full carousel height === */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-between text-center text-white px-6 pt-24 pb-12">
+      {/* === Text overlay — holds the section height and splits content top/bottom === */}
+      <div className="relative z-10 flex flex-col justify-between text-center text-white px-6 pt-24 pb-12" style={{ minHeight: '92vh' }}>
         {/* Title — sits at top */}
         <div>
           <p className="text-xs tracking-[0.4em] uppercase mb-4" style={{ color: '#c9a84c' }}>
