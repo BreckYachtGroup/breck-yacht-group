@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import BoatLoanEmbed from '@/components/BoatLoanEmbed'
 
 export default function FinancingPage() {
   return (
@@ -33,6 +34,14 @@ export default function FinancingPage() {
             Speak With a Broker
           </Link>
         </div>
+
+        {/* BoatLoan.com Application */}
+        <div className="bg-white shadow-md p-6 md:p-10">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: '#0c1f3f' }}>Apply for Financing</h2>
+          <p className="text-gray-500 text-sm mb-8">Complete the form below to get pre-qualified. You won't leave this page.</p>
+          <BoatLoanEmbed />
+        </div>
+
       </div>
     </div>
   )
