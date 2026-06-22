@@ -46,7 +46,7 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '92vh', height: '92vh' }}>
+    <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
 
       {/* === VIDEO: All screen sizes === */}
       <div className="absolute inset-0">
@@ -63,6 +63,9 @@ export default function HeroCarousel() {
         />
         <div className="absolute inset-0" style={{ background: overlay }} />
       </div>
+
+      {/* Invisible spacer so the section takes up space in the document flow */}
+      <div style={{ minHeight: '92vh' }} aria-hidden="true" />
 
       {/* === Text overlay — fills full carousel height === */}
       <div className="absolute inset-0 z-10 flex flex-col justify-between text-center text-white px-6 pt-24 pb-12">
