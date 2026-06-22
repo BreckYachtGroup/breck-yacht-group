@@ -66,8 +66,8 @@ export default function HeroCarousel() {
 
       {/* === Text overlay === */}
       <div
-        className="relative z-10 flex flex-col items-center justify-between text-center text-white px-6 pt-28 md:pt-28 pb-20 md:pb-16"
-        style={{ minHeight: '92vh' }}
+        className="relative z-10 flex flex-col items-center justify-between text-center text-white px-6 pt-20 md:pt-28 pb-28 md:pb-16"
+        style={{ minHeight: '95vh' }}
       >
         {/* Top: title */}
         <div>
