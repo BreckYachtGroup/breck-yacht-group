@@ -46,7 +46,7 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
+    <section className="relative overflow-hidden" style={{ minHeight: '92svh' }}>
 
       {/* === VIDEO: All screen sizes === */}
       <div className="absolute inset-0">
@@ -64,38 +64,38 @@ export default function HeroCarousel() {
         <div className="absolute inset-0" style={{ background: overlay }} />
       </div>
 
-      {/* === Text overlay — holds the section height and splits content top/bottom === */}
-      <div className="relative z-10 flex flex-col justify-between text-center text-white px-6 pt-24 pb-12" style={{ minHeight: '92vh' }}>
-        {/* Title — sits at top */}
-        <div>
-          <p className="text-xs tracking-[0.4em] uppercase mb-4" style={{ color: '#c9a84c' }}>
-            Premium Yacht Brokerage
-          </p>
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-            Find Your Perfect<br />Performance Vessel
-          </h1>
-        </div>
+      {/* Spacer to hold section height in document flow */}
+      <div style={{ minHeight: '92svh' }} aria-hidden="true" />
 
-        {/* Description + buttons — sits at bottom */}
-        <div>
-          <p className="text-white/80 text-sm md:text-lg mb-6 leading-relaxed max-w-2xl mx-auto">
-            Breck Yacht Group specializes in the finest center consoles and sportfish vessels on the market. Browse our curated inventory or speak with a broker today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/inventory"
-              className="px-8 py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#c9a84c' }}
-            >
-              View Inventory
-            </Link>
-            <a
-              href="#contact"
-              className="px-8 py-4 text-sm tracking-widest uppercase font-semibold border border-white/40 text-white hover:bg-white/10 transition-colors"
-            >
-              Contact a Broker
-            </a>
-          </div>
+      {/* Title — pinned to top of section, not viewport */}
+      <div className="absolute z-10 left-0 right-0 text-center text-white px-6" style={{ top: '96px' }}>
+        <p className="text-xs tracking-[0.4em] uppercase mb-4" style={{ color: '#c9a84c' }}>
+          Premium Yacht Brokerage
+        </p>
+        <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+          Find Your Perfect<br />Performance Vessel
+        </h1>
+      </div>
+
+      {/* Description + buttons — pinned to bottom of section, not viewport */}
+      <div className="absolute z-10 left-0 right-0 text-center text-white px-6" style={{ bottom: '48px' }}>
+        <p className="text-white/80 text-sm md:text-lg mb-6 leading-relaxed max-w-2xl mx-auto">
+          Breck Yacht Group specializes in the finest center consoles and sportfish vessels on the market. Browse our curated inventory or speak with a broker today.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            href="/inventory"
+            className="px-8 py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: '#c9a84c' }}
+          >
+            View Inventory
+          </Link>
+          <a
+            href="#contact"
+            className="px-8 py-4 text-sm tracking-widest uppercase font-semibold border border-white/40 text-white hover:bg-white/10 transition-colors"
+          >
+            Contact a Broker
+          </a>
         </div>
       </div>
 
