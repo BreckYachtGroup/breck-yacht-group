@@ -66,10 +66,17 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       {/* Make */}
       <div>
         <label className={labelClass}>Make</label>
-        <select value={make} onChange={e => setMake(e.target.value)} className={selectClass}>
-          <option value="">All Makes</option>
-          {makes.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <input
+          type="text"
+          list="makes-list"
+          placeholder="Search makes..."
+          value={make}
+          onChange={e => setMake(e.target.value)}
+          className={inputClass}
+        />
+        <datalist id="makes-list">
+          {makes.map(m => <option key={m} value={m} />)}
+        </datalist>
       </div>
 
       {/* Year */}
@@ -128,10 +135,17 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       {/* Location */}
       <div>
         <label className={labelClass}>Location</label>
-        <select value={state} onChange={e => setState(e.target.value)} className={selectClass}>
-          <option value="">All Locations</option>
-          {states.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <input
+          type="text"
+          list="locations-list"
+          placeholder="Search locations..."
+          value={state}
+          onChange={e => setState(e.target.value)}
+          className={inputClass}
+        />
+        <datalist id="locations-list">
+          {states.map(s => <option key={s} value={s} />)}
+        </datalist>
       </div>
 
       {/* Clear */}
