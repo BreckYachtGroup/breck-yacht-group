@@ -169,7 +169,7 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
           <h2 className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: '#0c1f3f' }}>
             Search Filters
           </h2>
-          <FilterPanel />
+          {FilterPanel()}
         </div>
       </aside>
 
@@ -190,7 +190,7 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
         {/* Mobile filter panel */}
         {filtersOpen && (
           <div className="lg:hidden bg-white border border-gray-100 p-6 rounded mb-6">
-            <FilterPanel />
+            {FilterPanel()}
           </div>
         )}
 
