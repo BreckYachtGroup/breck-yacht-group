@@ -46,7 +46,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
           </div>
           <p className="mb-2">Palm Beach, FL &nbsp;·&nbsp; <a href="tel:5617235636" className="hover:text-white transition-colors">(561) 723-5636</a></p>
+          <div className="flex justify-center mb-3">
+            <img src="/IYBALogo.gif" alt="International Yacht Brokers Association Member" className="h-16 opacity-70 hover:opacity-100 transition-opacity" />
+          </div>
           <p>© {new Date().getFullYear()} Breck Yacht Group · All Rights Reserved</p>
+          <p className="mt-2">
+            <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a>
+            &nbsp;·&nbsp;
+            <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+          </p>
         </footer>
         <Analytics />
         <SpeedInsights />

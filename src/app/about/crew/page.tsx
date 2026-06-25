@@ -41,6 +41,7 @@ export default function CrewPage() {
               <h2 className="text-xl font-bold mb-1" style={{ color: '#0c1f3f' }}>{member.name}</h2>
               <p className="text-xs tracking-widest uppercase mb-4" style={{ color: '#c9a84c' }}>{member.title}</p>
               <p className="text-gray-500 text-sm leading-relaxed">{member.bio}</p>
+              <img src="/IYBALogo.gif" alt="IYBA Member" className="h-12 mx-auto mt-4 opacity-80" />
             </div>
           ))}
         </div>
