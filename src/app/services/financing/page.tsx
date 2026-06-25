@@ -42,6 +42,9 @@ export default function FinancingPage() {
               src="/IFGLogo.jpg"
               alt="Intercoastal Financial Group"
               className="h-16 object-contain"
+              width={200}
+              height={64}
+              fetchPriority="high"
             />
             <div>
               <h2 className="text-2xl font-bold mb-2" style={{ color: '#0c1f3f' }}>Apply for Financing</h2>

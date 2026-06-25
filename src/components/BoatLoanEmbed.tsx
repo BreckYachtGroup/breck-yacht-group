@@ -1,14 +1,33 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function BoatLoanEmbed() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [loaded, setLoaded] = useState(false)
+
   useEffect(() => {
-    // Load the iFrame resizer script
+    // Only load the embed when it's scrolled into view
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loaded) {
+          setLoaded(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px' } // start loading 200px before it enters the viewport
+    )
+
+    if (containerRef.current) observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [loaded])
+
+  useEffect(() => {
+    if (!loaded) return
+
     const script = document.createElement('script')
     script.src = 'https://app.boatloan.com/js/iframeResizer.min.js'
     script.onload = () => {
-      // Once script is loaded, create and inject the iframe
       const container = document.getElementById('ifg-app-container-6477a530ab597')
       if (!container) return
 
@@ -25,7 +44,14 @@ export default function BoatLoanEmbed() {
       }
     }
     document.body.appendChild(script)
-  }, [])
+  }, [loaded])
 
-  return <div id="ifg-app-container-6477a530ab597" className="w-full" />
+  return (
+    <div ref={containerRef} className="w-full min-h-[60px]">
+      {!loaded && (
+        <p className="text-sm text-gray-400 text-center py-6">Loading application form...</p>
+      )}
+      <div id="ifg-app-container-6477a530ab597" className="w-full" />
+    </div>
+  )
 }
