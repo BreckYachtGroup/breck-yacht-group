@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
           <ul className="mt-3 space-y-2 list-disc pl-5">
             <li><strong>Contact Information:</strong> Name, email address, and phone number submitted through our contact, inquiry, or vessel valuation forms.</li>
             <li><strong>Financing Application Data:</strong> Information submitted through our third-party financing partner (Intercoastal Financial Group / BoatLoan.com), including financial and personal data entered directly into their embedded application. This data is collected and processed by our financing partner and is subject to their own privacy policy.</li>
-            <li><strong>Usage Data:</strong> General analytics data including pages visited, time spent on the Site, device type, and browser information collected through Vercel Analytics. This data is aggregated and not personally identifiable.</li>
+            <li><strong>Usage Data:</strong> General analytics data including pages visited, time spent on the Site, device type, and browser information collected through our analytics provider. This data is aggregated and not personally identifiable.</li>
             <li><strong>Communications:</strong> Any messages or correspondence you send to us directly.</li>
           </ul>
         </section>
@@ -44,8 +44,8 @@ export default function PrivacyPolicyPage() {
           <p>Our Site integrates with the following third-party services that may process your data independently:</p>
           <ul className="mt-3 space-y-2 list-disc pl-5">
             <li><strong>Intercoastal Financial Group / BoatLoan.com:</strong> Financing applications submitted through our Site are processed directly by our financing partner. Please review their privacy policy for details on how your financial information is handled.</li>
-            <li><strong>Resend:</strong> We use Resend to process and deliver email notifications from our contact forms.</li>
-            <li><strong>Vercel Analytics:</strong> We use Vercel Analytics to collect anonymous site usage data to improve performance.</li>
+            <li><strong>Email Delivery:</strong> Contact form submissions are processed and delivered via a third-party email delivery provider. No personal data is retained by this provider beyond what is necessary for message delivery.</li>
+            <li><strong>Site Analytics:</strong> We use a third-party analytics provider to collect anonymous usage data to improve Site performance. No personally identifiable information is collected through this service.</li>
           </ul>
         </section>
 
