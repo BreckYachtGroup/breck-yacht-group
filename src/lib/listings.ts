@@ -88,20 +88,16 @@ export async function getFeaturedListings(): Promise<Listing[]> {
 // ─── Proxy fetch (YachtBroker.org via Vultr static IP) ───────────────────────
 
 async function fetchFromProxy(): Promise<Listing[]> {
-  // Fetch first 3 pages of 50 listings each = up to 150 listings
-  // BYG own listings are identified client-side by brokerage ID
-  const pages = await Promise.all(
-    [1, 2, 3].map((page) =>
-      fetch(`${PROXY_URL}/listings?page=${page}&limit=50`, {
-        next: { revalidate: 300 }, // cache for 5 minutes
-      }).then((r) => {
-        if (!r.ok) throw new Error(`Proxy returned ${r.status}`)
-        return r.json()
-      })
-    )
-  )
+  // Proxy serves all listings from its in-memory cache (refreshed hourly).
+  // Single request — no pagination needed here.
+  const res = await fetch(`${PROXY_URL}/listings`, {
+    next: { revalidate: 300 }, // Next.js re-fetches from proxy every 5 minutes
+  })
 
-  const raw: Record<string, unknown>[] = pages.flatMap((p) => p['V-Data'] ?? [])
+  if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
+  const data = await res.json()
+
+  const raw: Record<string, unknown>[] = data['V-Data'] ?? []
 
   // Sort: BYG own listings first
   return raw
