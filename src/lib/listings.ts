@@ -104,15 +104,22 @@ export async function getFeaturedListings(): Promise<Listing[]> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeYachtBrokerListing(raw: any): Listing {
-  const images: string[] = (raw.gallery ?? [])
-    .map((g: any) => g.Large ?? g.HD ?? g.Medium)
-    .filter(Boolean)
-  if (images.length === 0 && raw.DisplayPicture?.Large) {
-    images.push(raw.DisplayPicture.Large)
+  // Handle both slim list format (raw.image) and full detail format (raw.gallery)
+  let images: string[] = []
+  if (raw.image) {
+    images = [raw.image]
+  } else {
+    images = (raw.gallery ?? [])
+      .map((g: any) => g.Large ?? g.HD ?? g.Medium)
+      .filter(Boolean)
+    if (images.length === 0 && raw.DisplayPicture?.Large) {
+      images.push(raw.DisplayPicture.Large)
+    }
   }
 
+  // Handle both slim list format (raw.hours) and full detail format (raw.engines[])
   const engine = Array.isArray(raw.engines) ? raw.engines[0] : null
-  const hours = engine?.Hours ?? 0
+  const hours = raw.hours ?? engine?.Hours ?? 0
   const engineDetails = [engine?.Make, engine?.Model, engine?.HP ? `${engine.HP}HP` : null]
     .filter(Boolean)
     .join(' ')
