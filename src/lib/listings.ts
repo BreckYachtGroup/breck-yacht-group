@@ -1,20 +1,36 @@
 /**
  * listings.ts — Central data source for all vessel listings.
  *
- * CURRENT:  Reads from Supabase (manual listings you enter yourself).
- * FUTURE:   Switch to YachtBroker.org live API by setting YACHTBROKER_API_KEY
- *           in your environment variables. No other code changes needed.
+ * Now powered by the YachtBroker.org MLS feed via the Vultr proxy server.
+ * Own BYG listings are identified by BROKERAGE_ID and shown first.
+ * Co-brokerage listings from the MLS are shown below with a badge.
  *
- * To activate the live feed:
- *   1. Subscribe at yachtbroker.org
- *   2. Add YACHTBROKER_API_KEY to your Vercel environment variables
- *   3. Redeploy — the site automatically switches to the live feed
+ * Data is cached by Next.js for 5 minutes (revalidate: 300).
  */
 
-import { supabase, type Vessel } from './supabase'
+import { supabase } from './supabase'
 
-const YACHTBROKER_API_KEY = process.env.YACHTBROKER_API_KEY
-const YACHTBROKER_API_URL = 'https://api.yachtbroker.org/v1' // update if they provide a different endpoint
+// ─── Config ──────────────────────────────────────────────────────────────────
+
+const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
+const BYG_BROKERAGE_ID = 40000937 // Breck Yacht Group's MLS brokerage ID
+
+// State abbreviation map for display
+const STATE_ABBR: Record<string, string> = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
+  'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
+  'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
+  'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
+  'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+  'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+  'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+  'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
+  'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
+  'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
+  'Wisconsin': 'WI', 'Wyoming': 'WY',
+}
 
 // ─── Shared return type ───────────────────────────────────────────────────────
 
@@ -36,42 +52,124 @@ export type Listing = {
   fuel_type: string
   images: string[]
   featured: boolean
-  // Co-brokerage fields (populated from API feed)
+  // Co-brokerage fields
   broker_name?: string
   broker_company?: string
   broker_email?: string
   broker_phone?: string
-  is_cobrokerage?: boolean  // true if listing belongs to another broker
+  is_cobrokerage?: boolean
 }
 
-// ─── Fetch all listings ───────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function getAllListings(): Promise<Listing[]> {
-  if (YACHTBROKER_API_KEY) {
-    return fetchFromYachtBrokerAPI()
+  try {
+    return await fetchFromProxy()
+  } catch (err) {
+    console.error('Proxy failed, falling back to Supabase:', err)
+    return fetchFromSupabase()
   }
-  return fetchFromSupabase()
 }
-
-// ─── Fetch a single listing by slug ──────────────────────────────────────────
 
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
-  if (YACHTBROKER_API_KEY) {
-    const all = await fetchFromYachtBrokerAPI()
-    return all.find((l) => l.slug === slug) ?? null
-  }
-  const { data } = await supabase.from('vessels').select('*').eq('slug', slug).single()
-  return data as Listing | null
+  const all = await getAllListings()
+  return all.find((l) => l.slug === slug) ?? null
 }
-
-// ─── Fetch featured listings ──────────────────────────────────────────────────
 
 export async function getFeaturedListings(): Promise<Listing[]> {
   const all = await getAllListings()
-  return all.filter((l) => l.featured && l.status === 'available').slice(0, 3)
+  // Show BYG own listings first, then co-brokerage, limit to 6 on homepage
+  return all
+    .filter((l) => l.status === 'available')
+    .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
+    .slice(0, 6)
 }
 
-// ─── Supabase source (current) ────────────────────────────────────────────────
+// ─── Proxy fetch (YachtBroker.org via Vultr static IP) ───────────────────────
+
+async function fetchFromProxy(): Promise<Listing[]> {
+  // Fetch first 3 pages of 50 listings each = up to 150 listings
+  // BYG own listings are identified client-side by brokerage ID
+  const pages = await Promise.all(
+    [1, 2, 3].map((page) =>
+      fetch(`${PROXY_URL}/listings?page=${page}&limit=50`, {
+        next: { revalidate: 300 }, // cache for 5 minutes
+      }).then((r) => {
+        if (!r.ok) throw new Error(`Proxy returned ${r.status}`)
+        return r.json()
+      })
+    )
+  )
+
+  const raw: Record<string, unknown>[] = pages.flatMap((p) => p['V-Data'] ?? [])
+
+  // Sort: BYG own listings first
+  return raw
+    .map(normalizeYachtBrokerListing)
+    .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
+}
+
+// ─── Field mapping ────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeYachtBrokerListing(raw: any): Listing {
+  // Build image array from gallery, fall back to DisplayPicture
+  const images: string[] = (raw.gallery ?? [])
+    .map((g: any) => g.Large ?? g.HD ?? g.Medium)
+    .filter(Boolean)
+  if (images.length === 0 && raw.DisplayPicture?.Large) {
+    images.push(raw.DisplayPicture.Large)
+  }
+
+  // Pull engine info from first engine in array
+  const engine = Array.isArray(raw.engines) ? raw.engines[0] : null
+  const hours = engine?.Hours ?? 0
+  const engineParts = [engine?.Make, engine?.Model, engine?.HP ? `${engine.HP}HP` : null]
+  const engineDetails = engineParts.filter(Boolean).join(' ')
+
+  // Location: "City, ST"
+  const stateAbbr = STATE_ABBR[raw.State] ?? raw.State ?? ''
+  const location = [raw.City, stateAbbr].filter(Boolean).join(', ')
+
+  // Co-brokerage: listing belongs to another brokerage
+  const isCobrokerage = raw.ListingOwnerBrokerageID !== BYG_BROKERAGE_ID
+
+  // Status
+  const status: Listing['status'] =
+    raw.Status === 'Under Contract' ? 'under_contract' : 'available'
+
+  // Use Summary for description (cleaner text), fall back to Description
+  const description = (raw.Summary ?? raw.Description ?? '')
+    .replace(/<[^>]*>/g, '') // strip HTML tags
+    .trim()
+
+  return {
+    id:             String(raw.ID),
+    slug:           String(raw.ID),
+    name:           raw.VesselName || `${raw.Year} ${raw.Manufacturer} ${raw.Model}`,
+    make:           raw.Manufacturer ?? '',
+    model:          raw.Model ?? '',
+    year:           raw.Year ?? 0,
+    length_ft:      raw.DisplayLengthFeet ?? 0,
+    beam_ft:        raw.BeamFeet ?? 0,
+    price:          raw.PriceUSD ?? 0,
+    status,
+    location,
+    description,
+    engine_details: engineDetails,
+    hours,
+    fuel_type:      raw.FuelType ?? '',
+    images,
+    featured:       !isCobrokerage,
+    broker_name:    raw.ListingOwnerName ?? '',
+    broker_company: raw.ListingOwnerBrokerageName ?? '',
+    broker_email:   raw.ListingOwnerEmail ?? '',
+    broker_phone:   raw.ListingOwnerCell ?? raw.ListingOwnerPhone ?? '',
+    is_cobrokerage: isCobrokerage,
+  }
+}
+
+// ─── Supabase fallback ────────────────────────────────────────────────────────
 
 async function fetchFromSupabase(): Promise<Listing[]> {
   const { data } = await supabase
@@ -79,69 +177,4 @@ async function fetchFromSupabase(): Promise<Listing[]> {
     .select('*')
     .order('created_at', { ascending: false })
   return (data ?? []) as Listing[]
-}
-
-// ─── YachtBroker.org API source (activates automatically when key is set) ────
-//
-// NOTE: Update the fetch calls below once you receive your API documentation
-// from YachtBroker.org. The field mapping in normalizeYachtBrokerListing() is
-// where you match their field names to our Listing type.
-
-async function fetchFromYachtBrokerAPI(): Promise<Listing[]> {
-  try {
-    const res = await fetch(`${YACHTBROKER_API_URL}/listings`, {
-      headers: {
-        Authorization: `Bearer ${YACHTBROKER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      // Revalidate every 5 minutes so listings stay fresh without hammering the API
-      next: { revalidate: 300 },
-    })
-
-    if (!res.ok) {
-      console.error('YachtBroker API error:', res.status, res.statusText)
-      // Fall back to Supabase if the API call fails
-      return fetchFromSupabase()
-    }
-
-    const json = await res.json()
-
-    // json.listings — update this path to match the actual API response shape
-    const raw: Record<string, unknown>[] = json.listings ?? json.data ?? json ?? []
-    return raw.map(normalizeYachtBrokerListing)
-  } catch (err) {
-    console.error('YachtBroker API fetch failed, falling back to Supabase:', err)
-    return fetchFromSupabase()
-  }
-}
-
-/**
- * Maps a raw YachtBroker.org API listing to our Listing type.
- * Update field names here once you have the actual API docs.
- */
-function normalizeYachtBrokerListing(raw: Record<string, unknown>): Listing {
-  return {
-    id:             String(raw.id ?? raw.listing_id ?? ''),
-    slug:           String(raw.slug ?? raw.id ?? ''),
-    name:           String(raw.name ?? raw.title ?? ''),
-    make:           String(raw.make ?? raw.builder ?? ''),
-    model:          String(raw.model ?? ''),
-    year:           Number(raw.year ?? 0),
-    length_ft:      Number(raw.length_ft ?? raw.loa_ft ?? raw.length ?? 0),
-    beam_ft:        Number(raw.beam_ft ?? raw.beam ?? 0),
-    price:          Number(raw.price ?? raw.asking_price ?? 0),
-    status:         (raw.status as Listing['status']) ?? 'available',
-    location:       String(raw.location ?? raw.vessel_location ?? ''),
-    description:    String(raw.description ?? raw.comments ?? ''),
-    engine_details: String(raw.engine_details ?? raw.engines ?? ''),
-    hours:          Number(raw.hours ?? raw.engine_hours ?? 0),
-    fuel_type:      String(raw.fuel_type ?? raw.fuel ?? ''),
-    images:         Array.isArray(raw.images) ? raw.images as string[] : [],
-    featured:       Boolean(raw.featured ?? false),
-    broker_name:    String(raw.broker_name ?? raw.listing_broker ?? ''),
-    broker_company: String(raw.broker_company ?? raw.company ?? ''),
-    broker_email:   String(raw.broker_email ?? ''),
-    broker_phone:   String(raw.broker_phone ?? ''),
-    is_cobrokerage: Boolean(raw.is_cobrokerage ?? false),
-  }
 }

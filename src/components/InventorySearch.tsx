@@ -16,6 +16,7 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
   const [condition, setCondition] = useState<'all' | 'new' | 'used'>('all')
   const [state, setState] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [showOwn, setShowOwn] = useState(false)
 
   const makes = useMemo(() => [...new Set(vessels.map(v => v.make).filter(Boolean))].sort(), [vessels])
   const states = useMemo(() => [...new Set(vessels.map(v => v.location).filter(Boolean))].sort(), [vessels])
@@ -30,6 +31,7 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
 
   const filtered = useMemo(() => {
     return vessels.filter(v => {
+      if (showOwn && v.is_cobrokerage) return false
       if (search && !`${v.name} ${v.make} ${v.model} ${v.location}`.toLowerCase().includes(search.toLowerCase())) return false
       if (make && v.make !== make) return false
       if (minPrice && v.price < Number(minPrice)) return false
@@ -43,7 +45,7 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
       if (condition === 'used' && (!v.hours || v.hours <= 10)) return false
       return true
     })
-  }, [vessels, search, make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength, condition, state])
+  }, [vessels, search, make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength, condition, state, showOwn])
 
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
   const inputClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded"
@@ -194,10 +196,28 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
           </div>
         )}
 
-        {/* Results count */}
-        <p className="text-sm text-gray-400 mb-6">
-          {filtered.length} vessel{filtered.length !== 1 ? 's' : ''} found
-        </p>
+        {/* Own / All toggle + Results count */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-sm text-gray-400">
+            {filtered.length} vessel{filtered.length !== 1 ? 's' : ''} found
+          </p>
+          <div className="flex rounded overflow-hidden border border-gray-200 text-xs">
+            <button
+              onClick={() => setShowOwn(false)}
+              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
+              style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
+            >
+              All Listings
+            </button>
+            <button
+              onClick={() => setShowOwn(true)}
+              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
+              style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
+            >
+              BYG Only
+            </button>
+          </div>
+        </div>
 
         {/* Grid */}
         {filtered.length === 0 ? (
@@ -229,6 +249,14 @@ export default function InventorySearch({ vessels }: { vessels: Listing[] }) {
                       style={{ backgroundColor: vessel.status === 'sold' ? '#991b1b' : '#92400e' }}
                     >
                       {vessel.status === 'under_contract' ? 'Under Contract' : 'Sold'}
+                    </span>
+                  )}
+                  {vessel.is_cobrokerage && (
+                    <span
+                      className="absolute top-3 left-3 px-2 py-1 text-xs font-semibold uppercase tracking-widest text-white"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+                    >
+                      Co-Brokerage
                     </span>
                   )}
                 </div>
