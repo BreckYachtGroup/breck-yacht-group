@@ -17,13 +17,16 @@ export async function GET(request: Request) {
   const params = new URLSearchParams()
   params.set('page', searchParams.get('page') || '1')
   if (searchParams.get('make'))      params.set('make',      searchParams.get('make')!)
+  if (searchParams.get('model'))     params.set('model',     searchParams.get('model')!)
+  if (searchParams.get('state'))     params.set('state',     searchParams.get('state')!)
+  if (searchParams.get('fuelType'))  params.set('fuelType',  searchParams.get('fuelType')!)
+  if (searchParams.get('boatType'))  params.set('boatType',  searchParams.get('boatType')!)
   if (searchParams.get('minPrice'))  params.set('minPrice',  searchParams.get('minPrice')!)
   if (searchParams.get('maxPrice'))  params.set('maxPrice',  searchParams.get('maxPrice')!)
   if (searchParams.get('minYear'))   params.set('minYear',   searchParams.get('minYear')!)
   if (searchParams.get('maxYear'))   params.set('maxYear',   searchParams.get('maxYear')!)
   if (searchParams.get('minLength')) params.set('minLength', searchParams.get('minLength')!)
   if (searchParams.get('maxLength')) params.set('maxLength', searchParams.get('maxLength')!)
-  if (searchParams.get('keyword'))   params.set('keyword',   searchParams.get('keyword')!)
 
   try {
     const res = await fetch(`${PROXY_URL}/listings?${params.toString()}`, {

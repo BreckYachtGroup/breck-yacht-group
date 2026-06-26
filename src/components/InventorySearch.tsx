@@ -13,9 +13,18 @@ export default function InventorySearch() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
 
+  // ── Dropdown options from /meta ─────────────────────────────────────────────
+  const [metaStates, setMetaStates] = useState<string[]>([])
+  const [metaFuelTypes, setMetaFuelTypes] = useState<string[]>([])
+  const [metaBoatTypes, setMetaBoatTypes] = useState<string[]>([])
+
   // ── Filter state ────────────────────────────────────────────────────────────
   const [keyword, setKeyword] = useState('')
   const [make, setMake] = useState('')
+  const [model, setModel] = useState('')
+  const [state, setState] = useState('')
+  const [fuelType, setFuelType] = useState('')
+  const [boatType, setBoatType] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [minYear, setMinYear] = useState('')
@@ -28,20 +37,35 @@ export default function InventorySearch() {
   // ── Debounce timer ref ──────────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // ── Fetch dropdown options on mount ────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/vessels/meta')
+      .then(r => r.json())
+      .then(d => {
+        setMetaStates(d.states ?? [])
+        setMetaFuelTypes(d.fuelTypes ?? [])
+        setMetaBoatTypes(d.boatTypes ?? [])
+      })
+      .catch(() => {/* non-critical — dropdowns stay empty */})
+  }, [])
+
   // ── Build query string from current filters ─────────────────────────────────
-  const buildParams = useCallback((page: number, overrides: Record<string, string> = {}) => {
+  const buildParams = useCallback((page: number) => {
     const p = new URLSearchParams()
     p.set('page', String(page))
-    const f = { make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength, ...overrides }
-    if (f.make)      p.set('make',      f.make)
-    if (f.minPrice)  p.set('minPrice',  f.minPrice)
-    if (f.maxPrice)  p.set('maxPrice',  f.maxPrice)
-    if (f.minYear)   p.set('minYear',   f.minYear)
-    if (f.maxYear)   p.set('maxYear',   f.maxYear)
-    if (f.minLength) p.set('minLength', f.minLength)
-    if (f.maxLength) p.set('maxLength', f.maxLength)
+    if (make)      p.set('make',      make)
+    if (model)     p.set('model',     model)
+    if (state)     p.set('state',     state)
+    if (fuelType)  p.set('fuelType',  fuelType)
+    if (boatType)  p.set('boatType',  boatType)
+    if (minPrice)  p.set('minPrice',  minPrice)
+    if (maxPrice)  p.set('maxPrice',  maxPrice)
+    if (minYear)   p.set('minYear',   minYear)
+    if (maxYear)   p.set('maxYear',   maxYear)
+    if (minLength) p.set('minLength', minLength)
+    if (maxLength) p.set('maxLength', maxLength)
     return p.toString()
-  }, [make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
+  }, [make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
 
   // ── Fetch page 1 (reset) or next page (append) ─────────────────────────────
   const fetchListings = useCallback(async (page: number, reset = false) => {
@@ -66,9 +90,8 @@ export default function InventorySearch() {
   // Initial load
   useEffect(() => { fetchListings(1, true) }, [fetchListings])
 
-  // ── Debounced re-search when filters change ─────────────────────────────────
-  // Filters that should trigger a fresh server-side search
-  const filtersKey = `${make}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
+  // ── Debounced re-search when server-side filters change ─────────────────────
+  const filtersKey = `${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
   const isFirstRender = useRef(true)
 
   useEffect(() => {
@@ -76,16 +99,17 @@ export default function InventorySearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       fetchListings(1, true)
-    }, 600) // 600ms debounce
+    }, 600)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearFilters = () => {
-    setKeyword(''); setMake(''); setMinPrice(''); setMaxPrice('')
-    setMinYear(''); setMaxYear(''); setMinLength(''); setMaxLength('')
+    setKeyword(''); setMake(''); setModel(''); setState(''); setFuelType(''); setBoatType('')
+    setMinPrice(''); setMaxPrice(''); setMinYear(''); setMaxYear(''); setMinLength(''); setMaxLength('')
   }
 
-  const hasFilters = keyword || make || minPrice || maxPrice || minYear || maxYear || minLength || maxLength
+  const hasFilters = keyword || make || model || state || fuelType || boatType ||
+    minPrice || maxPrice || minYear || maxYear || minLength || maxLength
 
   // ── Client-side filters applied on top of server results ───────────────────
   const filtered = useMemo(() => {
@@ -96,9 +120,10 @@ export default function InventorySearch() {
     })
   }, [vessels, showOwn, keyword])
 
-  // ── Shared input styles ─────────────────────────────────────────────────────
+  // ── Shared input/label styles ───────────────────────────────────────────────
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
   const inputClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded"
+  const selectClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded appearance-none"
 
   // ── Filter panel ────────────────────────────────────────────────────────────
   const FilterPanel = () => (
@@ -125,6 +150,47 @@ export default function InventorySearch() {
           className={inputClass}
         />
         <p className="text-xs text-gray-400 mt-1">Searches all {total.toLocaleString()} listings</p>
+      </div>
+
+      <div>
+        <label className={labelClass}>Model</label>
+        <input
+          type="text"
+          placeholder="e.g. 39 ST, 41 Express..."
+          value={model}
+          onChange={e => setModel(e.target.value)}
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Location / State</label>
+        <select value={state} onChange={e => setState(e.target.value)} className={selectClass}>
+          <option value="">All States</option>
+          {metaStates.map(s => (
+            <option key={s} value={s.toLowerCase()}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className={labelClass}>Boat Type</label>
+        <select value={boatType} onChange={e => setBoatType(e.target.value)} className={selectClass}>
+          <option value="">All Types</option>
+          {metaBoatTypes.map(t => (
+            <option key={t} value={t.toLowerCase()}>{t}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className={labelClass}>Fuel Type</label>
+        <select value={fuelType} onChange={e => setFuelType(e.target.value)} className={selectClass}>
+          <option value="">All Fuel Types</option>
+          {metaFuelTypes.map(f => (
+            <option key={f} value={f.toLowerCase()}>{f}</option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -178,7 +244,7 @@ export default function InventorySearch() {
           <h2 className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: '#0c1f3f' }}>
             Search Filters
           </h2>
-          {FilterPanel()}
+          <FilterPanel />
         </div>
       </aside>
 
@@ -198,7 +264,7 @@ export default function InventorySearch() {
 
         {filtersOpen && (
           <div className="lg:hidden bg-white border border-gray-100 p-6 rounded mb-6">
-            {FilterPanel()}
+            <FilterPanel />
           </div>
         )}
 
