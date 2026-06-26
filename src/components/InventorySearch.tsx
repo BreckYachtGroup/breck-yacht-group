@@ -14,6 +14,7 @@ export default function InventorySearch() {
   const [loadingMore, setLoadingMore] = useState(false)
 
   // ── Filter state ────────────────────────────────────────────────────────────
+  const [keyword, setKeyword] = useState('')
   const [make, setMake] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
@@ -80,17 +81,20 @@ export default function InventorySearch() {
   }, [filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearFilters = () => {
-    setMake(''); setMinPrice(''); setMaxPrice('')
+    setKeyword(''); setMake(''); setMinPrice(''); setMaxPrice('')
     setMinYear(''); setMaxYear(''); setMinLength(''); setMaxLength('')
   }
 
-  const hasFilters = make || minPrice || maxPrice || minYear || maxYear || minLength || maxLength
+  const hasFilters = keyword || make || minPrice || maxPrice || minYear || maxYear || minLength || maxLength
 
-  // ── Client-side BYG-only toggle (applied on top of server results) ──────────
-  const filtered = useMemo(() =>
-    showOwn ? vessels.filter(v => !v.is_cobrokerage) : vessels,
-    [vessels, showOwn]
-  )
+  // ── Client-side filters applied on top of server results ───────────────────
+  const filtered = useMemo(() => {
+    return vessels.filter(v => {
+      if (showOwn && v.is_cobrokerage) return false
+      if (keyword && !`${v.name} ${v.make} ${v.model} ${v.location}`.toLowerCase().includes(keyword.toLowerCase())) return false
+      return true
+    })
+  }, [vessels, showOwn, keyword])
 
   // ── Shared input styles ─────────────────────────────────────────────────────
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
@@ -99,6 +103,17 @@ export default function InventorySearch() {
   // ── Filter panel ────────────────────────────────────────────────────────────
   const FilterPanel = () => (
     <div className="space-y-5">
+
+      <div>
+        <label className={labelClass}>Keyword Search</label>
+        <input
+          type="text"
+          placeholder="Search name, model, location..."
+          value={keyword}
+          onChange={e => setKeyword(e.target.value)}
+          className={inputClass}
+        />
+      </div>
 
       <div>
         <label className={labelClass}>Make / Manufacturer</label>
