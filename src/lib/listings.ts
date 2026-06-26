@@ -1,21 +1,19 @@
 /**
- * listings.ts — Central data source for all vessel listings.
+ * listings.ts — Central data source for vessel listings.
  *
- * Now powered by the YachtBroker.org MLS feed via the Vultr proxy server.
- * Own BYG listings are identified by BROKERAGE_ID and shown first.
- * Co-brokerage listings from the MLS are shown below with a badge.
+ * Architecture: Vultr proxy (static IP) → YachtBroker.org MLS API
+ * - getAllListings: fetches first 3 pages for homepage featured section
+ * - getListingBySlug: fetches a single listing by its MLS ID
+ * - getFeaturedListings: BYG own listings first, up to 6
  *
- * Data is cached by Next.js for 5 minutes (revalidate: 300).
+ * Inventory browsing uses client-side pagination via /api/vessels route.
  */
 
 import { supabase } from './supabase'
 
-// ─── Config ──────────────────────────────────────────────────────────────────
-
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
-const BYG_BROKERAGE_ID = 40000937 // Breck Yacht Group's MLS brokerage ID
+const BYG_BROKERAGE_ID = 40000937
 
-// State abbreviation map for display
 const STATE_ABBR: Record<string, string> = {
   'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
   'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
@@ -31,8 +29,6 @@ const STATE_ABBR: Record<string, string> = {
   'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
   'Wisconsin': 'WI', 'Wyoming': 'WY',
 }
-
-// ─── Shared return type ───────────────────────────────────────────────────────
 
 export type Listing = {
   id: string
@@ -52,7 +48,6 @@ export type Listing = {
   fuel_type: string
   images: string[]
   featured: boolean
-  // Co-brokerage fields
   broker_name?: string
   broker_company?: string
   broker_email?: string
@@ -60,56 +55,55 @@ export type Listing = {
   is_cobrokerage?: boolean
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ── Public API ────────────────────────────────────────────────────────────────
 
+// Used by homepage featured section — fetches 3 pages (45 listings)
 export async function getAllListings(): Promise<Listing[]> {
   try {
-    return await fetchFromProxy()
-  } catch (err) {
-    console.error('Proxy failed, falling back to Supabase:', err)
+    const pages = await Promise.all(
+      [1, 2, 3].map((page) =>
+        fetch(`${PROXY_URL}/listings?page=${page}`, { next: { revalidate: 300 } })
+          .then((r) => (r.ok ? r.json() : { 'V-Data': [] }))
+          .catch(() => ({ 'V-Data': [] }))
+      )
+    )
+    const raw = pages.flatMap((p) => p['V-Data'] ?? [])
+    return raw
+      .map(normalizeYachtBrokerListing)
+      .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
+  } catch {
     return fetchFromSupabase()
   }
 }
 
+// Used by listing detail page — fetches a single vessel by MLS ID
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
-  const all = await getAllListings()
-  return all.find((l) => l.slug === slug) ?? null
+  try {
+    const res = await fetch(`${PROXY_URL}/listing/${slug}`, {
+      next: { revalidate: 300 },
+    })
+    if (!res.ok) return null
+    const raw = await res.json()
+    if (raw.error) return null
+    return normalizeYachtBrokerListing(raw)
+  } catch {
+    return null
+  }
 }
 
+// Used by homepage carousel — BYG own listings first, max 6
 export async function getFeaturedListings(): Promise<Listing[]> {
   const all = await getAllListings()
-  // Show BYG own listings first, then co-brokerage, limit to 6 on homepage
   return all
     .filter((l) => l.status === 'available')
     .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
     .slice(0, 6)
 }
 
-// ─── Proxy fetch (YachtBroker.org via Vultr static IP) ───────────────────────
-
-async function fetchFromProxy(): Promise<Listing[]> {
-  // Proxy serves all listings from its in-memory cache (refreshed hourly).
-  // Single request — no pagination needed here.
-  const res = await fetch(`${PROXY_URL}/listings`, {
-    next: { revalidate: 300 }, // Next.js re-fetches from proxy every 5 minutes
-  })
-
-  if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
-  const data = await res.json()
-
-  const raw: Record<string, unknown>[] = data['V-Data'] ?? []
-
-  // Sort: BYG own listings first
-  return raw
-    .map(normalizeYachtBrokerListing)
-    .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
-}
-
-// ─── Field mapping ────────────────────────────────────────────────────────────
+// ── Field normalization ───────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeYachtBrokerListing(raw: any): Listing {
-  // Build image array from gallery, fall back to DisplayPicture
+export function normalizeYachtBrokerListing(raw: any): Listing {
   const images: string[] = (raw.gallery ?? [])
     .map((g: any) => g.Large ?? g.HD ?? g.Medium)
     .filter(Boolean)
@@ -117,26 +111,22 @@ function normalizeYachtBrokerListing(raw: any): Listing {
     images.push(raw.DisplayPicture.Large)
   }
 
-  // Pull engine info from first engine in array
   const engine = Array.isArray(raw.engines) ? raw.engines[0] : null
   const hours = engine?.Hours ?? 0
-  const engineParts = [engine?.Make, engine?.Model, engine?.HP ? `${engine.HP}HP` : null]
-  const engineDetails = engineParts.filter(Boolean).join(' ')
+  const engineDetails = [engine?.Make, engine?.Model, engine?.HP ? `${engine.HP}HP` : null]
+    .filter(Boolean)
+    .join(' ')
 
-  // Location: "City, ST"
   const stateAbbr = STATE_ABBR[raw.State] ?? raw.State ?? ''
   const location = [raw.City, stateAbbr].filter(Boolean).join(', ')
 
-  // Co-brokerage: listing belongs to another brokerage
   const isCobrokerage = raw.ListingOwnerBrokerageID !== BYG_BROKERAGE_ID
 
-  // Status
   const status: Listing['status'] =
     raw.Status === 'Under Contract' ? 'under_contract' : 'available'
 
-  // Use Summary for description (cleaner text), fall back to Description
   const description = (raw.Summary ?? raw.Description ?? '')
-    .replace(/<[^>]*>/g, '') // strip HTML tags
+    .replace(/<[^>]*>/g, '')
     .trim()
 
   return {
@@ -165,7 +155,7 @@ function normalizeYachtBrokerListing(raw: any): Listing {
   }
 }
 
-// ─── Supabase fallback ────────────────────────────────────────────────────────
+// ── Supabase fallback ─────────────────────────────────────────────────────────
 
 async function fetchFromSupabase(): Promise<Listing[]> {
   const { data } = await supabase
