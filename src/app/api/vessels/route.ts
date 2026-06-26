@@ -1,9 +1,9 @@
 /**
- * /api/vessels — Server-side API route for paginated inventory.
+ * /api/vessels — Paginated vessel search endpoint.
  *
- * Called by the InventorySearch client component.
- * Fetches one page of listings from the Vultr proxy and normalizes them.
- * Next.js caches each page response for 60 seconds.
+ * Accepts filter params and passes them to the Vultr proxy,
+ * which forwards them to YachtBroker.org for server-side filtering.
+ * This means searches work across ALL 8,000+ listings, not just loaded ones.
  */
 
 import { normalizeYachtBrokerListing, type Listing } from '@/lib/listings'
@@ -12,13 +12,23 @@ const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const page = searchParams.get('page') || '1'
+
+  // Build proxy query string with all supported filter params
+  const params = new URLSearchParams()
+  params.set('page', searchParams.get('page') || '1')
+  if (searchParams.get('make'))      params.set('make',      searchParams.get('make')!)
+  if (searchParams.get('minPrice'))  params.set('minPrice',  searchParams.get('minPrice')!)
+  if (searchParams.get('maxPrice'))  params.set('maxPrice',  searchParams.get('maxPrice')!)
+  if (searchParams.get('minYear'))   params.set('minYear',   searchParams.get('minYear')!)
+  if (searchParams.get('maxYear'))   params.set('maxYear',   searchParams.get('maxYear')!)
+  if (searchParams.get('minLength')) params.set('minLength', searchParams.get('minLength')!)
+  if (searchParams.get('maxLength')) params.set('maxLength', searchParams.get('maxLength')!)
+  if (searchParams.get('keyword'))   params.set('keyword',   searchParams.get('keyword')!)
 
   try {
-    const res = await fetch(`${PROXY_URL}/listings?page=${page}`, {
+    const res = await fetch(`${PROXY_URL}/listings?${params.toString()}`, {
       next: { revalidate: 60 },
     })
-
     if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
 
     const data = await res.json()
@@ -28,7 +38,7 @@ export async function GET(request: Request) {
       listings,
       total: data.total ?? 0,
       lastPage: data.last_page ?? 1,
-      currentPage: Number(page),
+      currentPage: Number(searchParams.get('page') || '1'),
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'

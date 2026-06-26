@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { type Listing } from '@/lib/listings'
 
 export default function InventorySearch() {
-  // ── Data state ──────────────────────────────────────────────────────────────
+  // ── Server-fetched vessels ──────────────────────────────────────────────────
   const [vessels, setVessels] = useState<Listing[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [lastPage, setLastPage] = useState(1)
@@ -14,7 +14,6 @@ export default function InventorySearch() {
   const [loadingMore, setLoadingMore] = useState(false)
 
   // ── Filter state ────────────────────────────────────────────────────────────
-  const [search, setSearch] = useState('')
   const [make, setMake] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
@@ -22,20 +21,36 @@ export default function InventorySearch() {
   const [maxYear, setMaxYear] = useState('')
   const [minLength, setMinLength] = useState('')
   const [maxLength, setMaxLength] = useState('')
-  const [condition, setCondition] = useState<'all' | 'new' | 'used'>('all')
-  const [locationFilter, setLocationFilter] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [showOwn, setShowOwn] = useState(false)
 
-  // ── Fetch logic ─────────────────────────────────────────────────────────────
-  const fetchPage = useCallback(async (page: number) => {
-    if (page === 1) setLoading(true)
+  // ── Debounce timer ref ──────────────────────────────────────────────────────
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Build query string from current filters ─────────────────────────────────
+  const buildParams = useCallback((page: number, overrides: Record<string, string> = {}) => {
+    const p = new URLSearchParams()
+    p.set('page', String(page))
+    const f = { make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength, ...overrides }
+    if (f.make)      p.set('make',      f.make)
+    if (f.minPrice)  p.set('minPrice',  f.minPrice)
+    if (f.maxPrice)  p.set('maxPrice',  f.maxPrice)
+    if (f.minYear)   p.set('minYear',   f.minYear)
+    if (f.maxYear)   p.set('maxYear',   f.maxYear)
+    if (f.minLength) p.set('minLength', f.minLength)
+    if (f.maxLength) p.set('maxLength', f.maxLength)
+    return p.toString()
+  }, [make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
+
+  // ── Fetch page 1 (reset) or next page (append) ─────────────────────────────
+  const fetchListings = useCallback(async (page: number, reset = false) => {
+    if (reset) { setLoading(true); setVessels([]) }
     else setLoadingMore(true)
 
     try {
-      const res = await fetch(`/api/vessels?page=${page}`)
+      const res = await fetch(`/api/vessels?${buildParams(page)}`)
       const data = await res.json()
-      setVessels(prev => page === 1 ? data.listings : [...prev, ...data.listings])
+      setVessels(prev => reset ? data.listings : [...prev, ...data.listings])
       setCurrentPage(data.currentPage)
       setLastPage(data.lastPage)
       setTotal(data.total)
@@ -45,86 +60,64 @@ export default function InventorySearch() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [])
+  }, [buildParams])
 
-  useEffect(() => { fetchPage(1) }, [fetchPage])
+  // Initial load
+  useEffect(() => { fetchListings(1, true) }, [fetchListings])
 
-  // ── Filter options derived from loaded vessels ───────────────────────────────
-  const makes = useMemo(() =>
-    [...new Set(vessels.map(v => v.make).filter(Boolean))].sort(),
-    [vessels]
-  )
-  const locations = useMemo(() =>
-    [...new Set(vessels.map(v => v.location).filter(Boolean))].sort(),
-    [vessels]
-  )
+  // ── Debounced re-search when filters change ─────────────────────────────────
+  // Filters that should trigger a fresh server-side search
+  const filtersKey = `${make}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
+  const isFirstRender = useRef(true)
 
-  const hasFilters = search || make || minPrice || maxPrice || minYear || maxYear || minLength || maxLength || condition !== 'all' || locationFilter
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchListings(1, true)
+    }, 600) // 600ms debounce
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearFilters = () => {
-    setSearch(''); setMake(''); setMinPrice(''); setMaxPrice('')
+    setMake(''); setMinPrice(''); setMaxPrice('')
     setMinYear(''); setMaxYear(''); setMinLength(''); setMaxLength('')
-    setCondition('all'); setLocationFilter('')
   }
 
-  // ── Client-side filter on loaded vessels ────────────────────────────────────
-  const filtered = useMemo(() => {
-    return vessels.filter(v => {
-      if (showOwn && v.is_cobrokerage) return false
-      if (search && !`${v.name} ${v.make} ${v.model} ${v.location}`.toLowerCase().includes(search.toLowerCase())) return false
-      if (make && v.make !== make) return false
-      if (minPrice && v.price < Number(minPrice)) return false
-      if (maxPrice && v.price > Number(maxPrice)) return false
-      if (minYear && v.year < Number(minYear)) return false
-      if (maxYear && v.year > Number(maxYear)) return false
-      if (minLength && v.length_ft < Number(minLength)) return false
-      if (maxLength && v.length_ft > Number(maxLength)) return false
-      if (locationFilter && v.location !== locationFilter) return false
-      if (condition === 'new' && v.hours && v.hours > 10) return false
-      if (condition === 'used' && (!v.hours || v.hours <= 10)) return false
-      return true
-    })
-  }, [vessels, search, make, minPrice, maxPrice, minYear, maxYear, minLength, maxLength, condition, locationFilter, showOwn])
+  const hasFilters = make || minPrice || maxPrice || minYear || maxYear || minLength || maxLength
+
+  // ── Client-side BYG-only toggle (applied on top of server results) ──────────
+  const filtered = useMemo(() =>
+    showOwn ? vessels.filter(v => !v.is_cobrokerage) : vessels,
+    [vessels, showOwn]
+  )
 
   // ── Shared input styles ─────────────────────────────────────────────────────
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
   const inputClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded"
 
-  // ── Filter panel (rendered as function to avoid remount focus bug) ──────────
+  // ── Filter panel ────────────────────────────────────────────────────────────
   const FilterPanel = () => (
     <div className="space-y-5">
-      <div>
-        <label className={labelClass}>Keyword Search</label>
-        <input
-          type="text"
-          placeholder="Search..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className={inputClass}
-        />
-      </div>
 
       <div>
-        <label className={labelClass}>Make</label>
+        <label className={labelClass}>Make / Manufacturer</label>
         <input
           type="text"
-          list="makes-list"
-          placeholder="Search makes..."
+          placeholder="e.g. Contender, Regulator..."
           value={make}
           onChange={e => setMake(e.target.value)}
           className={inputClass}
         />
-        <datalist id="makes-list">
-          {makes.map(m => <option key={m} value={m} />)}
-        </datalist>
+        <p className="text-xs text-gray-400 mt-1">Searches all {total.toLocaleString()} listings</p>
       </div>
 
       <div>
         <label className={labelClass}>Year</label>
         <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minYear}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minYear}
             onChange={e => setMinYear(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxYear}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxYear}
             onChange={e => setMaxYear(e.target.value)} className={inputClass} />
         </div>
       </div>
@@ -132,9 +125,9 @@ export default function InventorySearch() {
       <div>
         <label className={labelClass}>Length (ft)</label>
         <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minLength}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minLength}
             onChange={e => setMinLength(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxLength}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxLength}
             onChange={e => setMaxLength(e.target.value)} className={inputClass} />
         </div>
       </div>
@@ -142,45 +135,11 @@ export default function InventorySearch() {
       <div>
         <label className={labelClass}>Price (USD)</label>
         <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Min" value={minPrice}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minPrice}
             onChange={e => setMinPrice(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="No Max" value={maxPrice}
+          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxPrice}
             onChange={e => setMaxPrice(e.target.value)} className={inputClass} />
         </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Condition</label>
-        <div className="flex rounded overflow-hidden border border-gray-200">
-          {(['all', 'new', 'used'] as const).map(c => (
-            <button
-              key={c}
-              onClick={() => setCondition(c)}
-              className="flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors"
-              style={{
-                backgroundColor: condition === c ? '#0c1f3f' : 'white',
-                color: condition === c ? 'white' : '#6b7280',
-              }}
-            >
-              {c === 'all' ? 'All' : c === 'new' ? 'New' : 'Used'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Location</label>
-        <input
-          type="text"
-          list="locations-list"
-          placeholder="Search locations..."
-          value={locationFilter}
-          onChange={e => setLocationFilter(e.target.value)}
-          className={inputClass}
-        />
-        <datalist id="locations-list">
-          {locations.map(s => <option key={s} value={s} />)}
-        </datalist>
       </div>
 
       {hasFilters && (
@@ -231,7 +190,7 @@ export default function InventorySearch() {
         {/* Results count + BYG toggle */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-400">
-            {loading ? 'Loading...' : `${filtered.length} of ${total.toLocaleString()} vessels`}
+            {loading ? 'Searching...' : `${total.toLocaleString()} vessels found`}
           </p>
           <div className="flex rounded overflow-hidden border border-gray-200 text-xs">
             <button
@@ -270,7 +229,6 @@ export default function InventorySearch() {
           <p className="text-center text-gray-400 py-20 text-lg">No vessels match your search.</p>
         ) : (
           <>
-            {/* Vessel grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filtered.map((vessel) => (
                 <Link
@@ -334,7 +292,7 @@ export default function InventorySearch() {
                   Showing {vessels.length.toLocaleString()} of {total.toLocaleString()} listings
                 </p>
                 <button
-                  onClick={() => fetchPage(currentPage + 1)}
+                  onClick={() => fetchListings(currentPage + 1)}
                   disabled={loadingMore}
                   className="px-10 py-3 text-sm font-semibold tracking-widest uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-50"
                   style={{ backgroundColor: '#0c1f3f' }}
