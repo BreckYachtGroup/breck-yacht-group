@@ -76,8 +76,21 @@ export async function getAllListings(): Promise<Listing[]> {
   }
 }
 
-// Used by listing detail page — fetches a single vessel by MLS ID
+// Used by listing detail page — checks Supabase first, then MLS proxy
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
+  // 1. Check Supabase first (BYG own manually-entered listings)
+  try {
+    const { data } = await supabase
+      .from('vessels')
+      .select('*')
+      .or(`slug.eq.${slug},id.eq.${slug}`)
+      .single()
+    if (data) return data as unknown as Listing
+  } catch {
+    // not in Supabase, fall through to MLS
+  }
+
+  // 2. Fall back to MLS proxy (co-brokerage + MLS listings)
   try {
     const res = await fetch(`${PROXY_URL}/listing/${slug}`, {
       next: { revalidate: 300 },
