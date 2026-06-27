@@ -77,7 +77,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
           <div className="sticky top-24 border border-gray-100 p-8 shadow-sm">
             <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">Asking Price</p>
             <p className="text-4xl font-bold mb-6" style={{ color: '#0c1f3f' }}>
-              ${vessel.price.toLocaleString()}
+              {vessel.price ? `$${vessel.price.toLocaleString()}` : 'Call for Price'}
             </p>
 
             <p className="text-sm font-semibold tracking-wider uppercase mb-4" style={{ color: '#0c1f3f' }}>

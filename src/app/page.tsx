@@ -45,7 +45,7 @@ export default async function HomePage() {
                     <h3 className="text-xl font-bold mb-2" style={{ color: '#0c1f3f' }}>{vessel.name}</h3>
                     <p className="text-gray-500 text-sm mb-4">{vessel.location}</p>
                     <p className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>
-                      ${vessel.price.toLocaleString()}
+                      {vessel.price ? `$${vessel.price.toLocaleString()}` : 'Call for Price'}
                     </p>
                   </div>
                 </Link>
