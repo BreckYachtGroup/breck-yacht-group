@@ -59,11 +59,12 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               { label: 'Make', value: vessel.make },
               { label: 'Model', value: vessel.model },
               { label: 'Length', value: `${vessel.length_ft} ft` },
-              { label: 'Beam', value: `${vessel.beam_ft} ft` },
+              { label: 'Beam', value: vessel.beam_ft ? `${vessel.beam_ft} ft` : null },
               { label: 'Fuel Type', value: vessel.fuel_type },
-              { label: 'Engine', value: vessel.engine_details },
+              { label: 'Engine', value: vessel.engine_details || null },
+              { label: 'Engine Hours', value: vessel.hours ? vessel.hours.toLocaleString() : null },
               { label: 'Status', value: vessel.status === 'under_contract' ? 'Under Contract' : vessel.status.charAt(0).toUpperCase() + vessel.status.slice(1) },
-            ].map((spec) => (
+            ].filter(spec => spec.value !== null && spec.value !== undefined && spec.value !== '').map((spec) => (
               <div key={spec.label} className="border border-gray-100 px-5 py-4">
                 <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">{spec.label}</p>
                 <p className="font-semibold text-sm" style={{ color: '#0c1f3f' }}>{spec.value || '—'}</p>
