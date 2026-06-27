@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   return {
     title: `${vessel.year} ${vessel.name} for Sale | Breck Yacht Group`,
-    description: `${vessel.year} ${vessel.make} ${vessel.model}, ${vessel.length_ft}ft, ${vessel.hours?.toLocaleString()} hours. Located in ${vessel.location}. Asking $${vessel.price.toLocaleString()}. Contact Breck Yacht Group in Palm Beach, FL.`,
+    description: `${vessel.year} ${vessel.make} ${vessel.model}, ${vessel.length_ft}ft${vessel.hours ? `, ${vessel.hours.toLocaleString()} hours` : ''}. Located in ${vessel.location}. Asking $${vessel.price.toLocaleString()}. Contact Breck Yacht Group in Palm Beach, FL.`,
     openGraph: {
       title: `${vessel.year} ${vessel.name} for Sale`,
       description: `${vessel.year} ${vessel.make} ${vessel.model} — $${vessel.price.toLocaleString()} — ${vessel.location}`,
@@ -60,7 +60,6 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               { label: 'Model', value: vessel.model },
               { label: 'Length', value: `${vessel.length_ft} ft` },
               { label: 'Beam', value: `${vessel.beam_ft} ft` },
-              { label: 'Engine Hours', value: vessel.hours?.toLocaleString() },
               { label: 'Fuel Type', value: vessel.fuel_type },
               { label: 'Engine', value: vessel.engine_details },
               { label: 'Status', value: vessel.status === 'under_contract' ? 'Under Contract' : vessel.status.charAt(0).toUpperCase() + vessel.status.slice(1) },
