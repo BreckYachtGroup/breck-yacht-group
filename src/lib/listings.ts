@@ -130,18 +130,12 @@ export async function getFeaturedListings(): Promise<Listing[]> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeYachtBrokerListing(raw: any): Listing {
-  // Handle both slim list format (raw.image) and full detail format (raw.gallery)
-  let images: string[] = []
-  if (raw.image) {
-    images = [raw.image]
-  } else {
-    images = (raw.gallery ?? [])
-      .map((g: any) => g.Large ?? g.HD ?? g.Medium)
-      .filter(Boolean)
-    if (images.length === 0 && raw.DisplayPicture?.Large) {
-      images.push(raw.DisplayPicture.Large)
-    }
-  }
+  // Use gallery if available (detail page), fall back to single image (list card)
+  let images: string[] = (raw.gallery ?? [])
+    .map((g: any) => g.Large ?? g.HD ?? g.Medium)
+    .filter(Boolean)
+  if (images.length === 0 && raw.DisplayPicture?.Large) images.push(raw.DisplayPicture.Large)
+  if (images.length === 0 && raw.image) images.push(raw.image)
 
   // Handle both slim list format (raw.hours) and full detail format (raw.engines[])
   const engine = Array.isArray(raw.engines) ? raw.engines[0] : null
