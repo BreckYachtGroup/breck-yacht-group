@@ -357,9 +357,11 @@ export default function InventorySearch() {
                       <p className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>
                         {vessel.price ? `$${vessel.price.toLocaleString()}` : 'Call for Price'}
                       </p>
-                      <span className="text-xs tracking-widest uppercase text-gray-400">
-                        {vessel.hours?.toLocaleString()} hrs
-                      </span>
+                      {vessel.hours ? (
+                        <span className="text-xs tracking-widest uppercase text-gray-400">
+                          {vessel.hours.toLocaleString()} hrs
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </Link>

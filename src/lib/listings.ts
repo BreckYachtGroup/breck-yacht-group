@@ -159,7 +159,7 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
   return {
     id:             String(raw.ID),
     slug:           String(raw.ID),
-    name:           raw.VesselName || `${raw.Year} ${raw.Manufacturer} ${raw.Model}`,
+    name:           raw.VesselName || [raw.Year, raw.Manufacturer, raw.Model].filter(Boolean).join(' '),
     make:           raw.Manufacturer ?? '',
     model:          raw.Model ?? '',
     year:           raw.Year ?? 0,
