@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getListingBySlug, type Listing } from '@/lib/listings'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
