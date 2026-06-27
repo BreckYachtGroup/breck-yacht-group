@@ -91,12 +91,25 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   }
 }
 
-// Used by homepage carousel — BYG own listings first, max 6
+// Used by homepage — shows only BYG's own Supabase listings, max 6
+// Falls back to BYG MLS listings if Supabase is empty
 export async function getFeaturedListings(): Promise<Listing[]> {
+  try {
+    const { data } = await supabase
+      .from('vessels')
+      .select('*')
+      .eq('status', 'available')
+      .order('created_at', { ascending: false })
+      .limit(6)
+    if (data && data.length > 0) return data as unknown as Listing[]
+  } catch {
+    // fall through
+  }
+
+  // Fallback: BYG own MLS listings only (no co-brokerage)
   const all = await getAllListings()
   return all
-    .filter((l) => l.status === 'available')
-    .sort((a, b) => (a.is_cobrokerage ? 1 : -1) - (b.is_cobrokerage ? 1 : -1))
+    .filter((l) => l.status === 'available' && !l.is_cobrokerage)
     .slice(0, 6)
 }
 
