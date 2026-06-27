@@ -83,8 +83,8 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
     const { data } = await supabase
       .from('vessels')
       .select('*')
-      .or(`slug.eq.${slug},id.eq.${slug}`)
-      .single()
+      .eq('slug', slug)
+      .maybeSingle()
     if (data) return data as unknown as Listing
   } catch {
     // not in Supabase, fall through to MLS
