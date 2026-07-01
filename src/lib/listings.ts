@@ -133,9 +133,21 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   }
 }
 
-// Used by homepage — shows only BYG's own Supabase listings, max 6
-// Falls back to BYG MLS listings if Supabase is empty
+// Used by homepage — shows BYG's own YachtBroker listings (bygOnly), max 6
 export async function getFeaturedListings(): Promise<Listing[]> {
+  try {
+    const res = await fetch(`${PROXY_URL}/listings?bygOnly=true&page=1`, {
+      next: { revalidate: 300 },
+    })
+    if (!res.ok) throw new Error('Proxy error')
+    const data = await res.json()
+    const listings: Listing[] = (data['V-Data'] ?? []).map(normalizeYachtBrokerListing)
+    if (listings.length > 0) return listings.slice(0, 6)
+  } catch {
+    // fall through to Supabase
+  }
+
+  // Fallback: Supabase if proxy is unavailable
   try {
     const { data } = await supabase
       .from('vessels')
@@ -145,14 +157,10 @@ export async function getFeaturedListings(): Promise<Listing[]> {
       .limit(6)
     if (data && data.length > 0) return data as unknown as Listing[]
   } catch {
-    // fall through
+    // ignore
   }
 
-  // Fallback: BYG own MLS listings only (no co-brokerage)
-  const all = await getAllListings()
-  return all
-    .filter((l) => l.status === 'available' && !l.is_cobrokerage)
-    .slice(0, 6)
+  return []
 }
 
 // ── Field normalization ───────────────────────────────────────────────────────
