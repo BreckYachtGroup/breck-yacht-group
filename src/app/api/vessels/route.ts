@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   if (searchParams.get('minLength')) params.set('minLength', searchParams.get('minLength')!)
   if (searchParams.get('maxLength')) params.set('maxLength', searchParams.get('maxLength')!)
   if (searchParams.get('bygOnly') === 'true') params.set('bygOnly', 'true')
+  if (searchParams.get('keyword')) params.set('keyword', searchParams.get('keyword')!)
 
   try {
     const res = await fetch(`${PROXY_URL}/listings?${params.toString()}`, {

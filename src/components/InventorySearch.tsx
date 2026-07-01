@@ -78,6 +78,7 @@ export default function InventorySearch() {
     const p = new URLSearchParams()
     p.set('page', String(page))
     if (showOwn)   p.set('bygOnly',   'true')
+    if (keyword)   p.set('keyword',   keyword)
     if (make)      p.set('make',      make)
     if (model)     p.set('model',     model)
     if (state)     p.set('state',     state)
@@ -90,7 +91,7 @@ export default function InventorySearch() {
     if (minLength) p.set('minLength', minLength)
     if (maxLength) p.set('maxLength', maxLength)
     return p.toString()
-  }, [showOwn, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
+  }, [showOwn, keyword, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
 
   // ── Fetch page 1 (reset) or next page (append) ─────────────────────────────
   const fetchListings = useCallback(async (page: number, reset = false) => {
@@ -116,7 +117,7 @@ export default function InventorySearch() {
   useEffect(() => { fetchListings(1, true) }, [fetchListings])
 
   // ── Debounced re-search when server-side filters change ─────────────────────
-  const filtersKey = `${showOwn}|${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
+  const filtersKey = `${showOwn}|${keyword}|${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
   const isFirstRender = useRef(true)
 
   useEffect(() => {
@@ -137,12 +138,7 @@ export default function InventorySearch() {
     minPrice || maxPrice || minYear || maxYear || minLength || maxLength
 
   // ── Client-side filters applied on top of server results ───────────────────
-  const filtered = useMemo(() => {
-    return vessels.filter(v => {
-      if (keyword && !`${v.name} ${v.make} ${v.model} ${v.location}`.toLowerCase().includes(keyword.toLowerCase())) return false
-      return true
-    })
-  }, [vessels, keyword])
+  const filtered = useMemo(() => vessels, [vessels])
 
   // ── Shared input/label styles ───────────────────────────────────────────────
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
