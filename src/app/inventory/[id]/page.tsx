@@ -120,6 +120,38 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
             </div>
           )}
 
+          {/* Videos */}
+          {vessel.videos && vessel.videos.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-6" style={{ color: '#0c1f3f' }}>Video</h2>
+              <div className="space-y-6">
+                {vessel.videos.map((vid, i) => {
+                  // Extract YouTube video ID from various URL formats
+                  const ytMatch = vid.URL.match(
+                    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+                  )
+                  if (!ytMatch) return null
+                  return (
+                    <div key={i}>
+                      {vid.Title && (
+                        <p className="text-sm font-semibold mb-2 text-gray-500 uppercase tracking-widest">{vid.Title}</p>
+                      )}
+                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                        <iframe
+                          className="absolute inset-0 w-full h-full rounded"
+                          src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                          title={vid.Title || 'Vessel Video'}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Textblocks — detailed equipment/spec sections from the listing broker */}
           {vessel.textblocks && vessel.textblocks.length > 0 && (
             <div className="space-y-8">

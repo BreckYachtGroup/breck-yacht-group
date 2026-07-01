@@ -82,6 +82,7 @@ export type Listing = {
   price_headline?: string
   last_price_change?: { OldPrice: number; NewPrice: number; DateTime: string } | null
   textblocks?: Array<{ Title: string; Description: string }>
+  videos?: Array<{ URL: string; Title: string }>
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -246,6 +247,7 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
     price_headline:       raw.PriceHeadline ?? '',
     last_price_change:    raw.LastPriceChange ?? null,
     textblocks:           raw.Textblocks ?? [],
+    videos:               raw.Videos ?? [],
   }
 }
 
