@@ -32,7 +32,7 @@ export default function InventorySearch() {
   const [minLength, setMinLength] = useState('')
   const [maxLength, setMaxLength] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [showOwn, setShowOwn] = useState(false)
+  const [showOwn, setShowOwn] = useState(true)
 
   // ── Debounce timer ref ──────────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -275,18 +275,18 @@ export default function InventorySearch() {
           </p>
           <div className="flex rounded overflow-hidden border border-gray-200 text-xs">
             <button
-              onClick={() => setShowOwn(false)}
-              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
-              style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
-            >
-              All Inventory
-            </button>
-            <button
               onClick={() => setShowOwn(true)}
               className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
               style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
             >
               BYG Listings
+            </button>
+            <button
+              onClick={() => setShowOwn(false)}
+              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
+              style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
+            >
+              All Inventory
             </button>
           </div>
         </div>
