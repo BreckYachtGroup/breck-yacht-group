@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import InventorySearch from '@/components/InventorySearch'
 
 export default function InventoryPage() {
@@ -8,7 +9,9 @@ export default function InventoryPage() {
         <h1 className="text-4xl font-bold">Current Inventory</h1>
       </div>
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <InventorySearch />
+        <Suspense fallback={<div className="text-center py-20 text-gray-400">Loading...</div>}>
+          <InventorySearch />
+        </Suspense>
       </div>
     </div>
   )
