@@ -53,6 +53,8 @@ export type Listing = {
   broker_email?: string
   broker_phone?: string
   is_cobrokerage?: boolean
+  // All engines from the API — Make/Model/HP often empty, Hours is the useful field
+  engines?: Array<{ Make: string; Model: string; HP: number; Hours: number | string }>
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -181,6 +183,7 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
     broker_email:   raw.ListingOwnerEmail ?? '',
     broker_phone:   raw.ListingOwnerCell ?? raw.ListingOwnerPhone ?? '',
     is_cobrokerage: isCobrokerage,
+    engines:        Array.isArray(engineList) ? engineList : [],
   }
 }
 

@@ -63,8 +63,18 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               { label: 'Length', value: `${vessel.length_ft} ft` },
               { label: 'Beam', value: vessel.beam_ft ? `${vessel.beam_ft} ft` : null },
               { label: 'Fuel Type', value: vessel.fuel_type },
-              { label: 'Engine', value: vessel.engine_details || null },
-              { label: 'Engine Hours', value: vessel.hours ? vessel.hours.toLocaleString() : null },
+              // Engine count — only show if more than 1
+              vessel.engines && vessel.engines.length > 1
+                ? { label: 'Engines', value: `${vessel.engines.length}×${vessel.engine_details ? ` ${vessel.engine_details}` : ''}` }
+                : { label: 'Engine', value: vessel.engine_details || null },
+              // Per-engine hours — show all engines if multiple, otherwise single row
+              ...(vessel.engines && vessel.engines.length > 1
+                ? vessel.engines.map((eng, i) => ({
+                    label: `Engine ${i + 1} Hours`,
+                    value: eng.Hours && Number(eng.Hours) > 0 ? Number(eng.Hours).toLocaleString() : null,
+                  }))
+                : [{ label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null }]
+              ),
               { label: 'Status', value: vessel.status === 'under_contract' ? 'Under Contract' : vessel.status.charAt(0).toUpperCase() + vessel.status.slice(1) },
             ].filter(spec => spec.value !== null && spec.value !== undefined && spec.value !== '').map((spec) => (
               <div key={spec.label} className="border border-gray-100 px-5 py-4">
