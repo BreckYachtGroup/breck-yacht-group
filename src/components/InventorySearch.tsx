@@ -2,9 +2,13 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { type Listing } from '@/lib/listings'
 
 export default function InventorySearch() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   // ── Server-fetched vessels ──────────────────────────────────────────────────
   const [vessels, setVessels] = useState<Listing[]>([])
   const [currentPage, setCurrentPage] = useState(0)
@@ -18,21 +22,41 @@ export default function InventorySearch() {
   const [metaFuelTypes, setMetaFuelTypes] = useState<string[]>([])
   const [metaBoatTypes, setMetaBoatTypes] = useState<string[]>([])
 
-  // ── Filter state ────────────────────────────────────────────────────────────
-  const [keyword, setKeyword] = useState('')
-  const [make, setMake] = useState('')
-  const [model, setModel] = useState('')
-  const [state, setState] = useState('')
-  const [fuelType, setFuelType] = useState('')
-  const [boatType, setBoatType] = useState('')
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [minYear, setMinYear] = useState('')
-  const [maxYear, setMaxYear] = useState('')
-  const [minLength, setMinLength] = useState('')
-  const [maxLength, setMaxLength] = useState('')
+  // ── Filter state — initialized from URL params ──────────────────────────────
+  const [keyword, setKeyword] = useState(() => searchParams.get('keyword') || '')
+  const [make, setMake] = useState(() => searchParams.get('make') || '')
+  const [model, setModel] = useState(() => searchParams.get('model') || '')
+  const [state, setState] = useState(() => searchParams.get('state') || '')
+  const [fuelType, setFuelType] = useState(() => searchParams.get('fuelType') || '')
+  const [boatType, setBoatType] = useState(() => searchParams.get('boatType') || '')
+  const [minPrice, setMinPrice] = useState(() => searchParams.get('minPrice') || '')
+  const [maxPrice, setMaxPrice] = useState(() => searchParams.get('maxPrice') || '')
+  const [minYear, setMinYear] = useState(() => searchParams.get('minYear') || '')
+  const [maxYear, setMaxYear] = useState(() => searchParams.get('maxYear') || '')
+  const [minLength, setMinLength] = useState(() => searchParams.get('minLength') || '')
+  const [maxLength, setMaxLength] = useState(() => searchParams.get('maxLength') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [showOwn, setShowOwn] = useState(true)
+  const [showOwn, setShowOwn] = useState(() => searchParams.get('tab') !== 'all')
+
+  // ── Sync filter state to URL so back button restores search ─────────────────
+  useEffect(() => {
+    const p = new URLSearchParams()
+    if (!showOwn) p.set('tab', 'all')
+    if (keyword)   p.set('keyword',   keyword)
+    if (make)      p.set('make',      make)
+    if (model)     p.set('model',     model)
+    if (state)     p.set('state',     state)
+    if (fuelType)  p.set('fuelType',  fuelType)
+    if (boatType)  p.set('boatType',  boatType)
+    if (minPrice)  p.set('minPrice',  minPrice)
+    if (maxPrice)  p.set('maxPrice',  maxPrice)
+    if (minYear)   p.set('minYear',   minYear)
+    if (maxYear)   p.set('maxYear',   maxYear)
+    if (minLength) p.set('minLength', minLength)
+    if (maxLength) p.set('maxLength', maxLength)
+    const qs = p.toString()
+    router.replace(qs ? `/inventory?${qs}` : '/inventory', { scroll: false })
+  }, [showOwn, keyword, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Debounce timer ref ──────────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
