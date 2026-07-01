@@ -33,7 +33,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
 
   if (!vessel) notFound()
 
-  // Pre-compute engine specs to avoid TypeScript inference issues inside JSX array
+  // Build full spec list before JSX to keep TypeScript happy
   type SpecItem = { label: string; value: string | number | null | undefined }
   const engList = vessel.engines ?? []
   const engDesc = (eng: typeof engList[0]) => {
@@ -52,6 +52,37 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
         { label: 'Engine', value: engList[0] ? engDesc(engList[0]) : (vessel.engine_details || null) },
         { label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null },
       ]
+
+  const allSpecs: SpecItem[] = [
+    { label: 'Year',        value: vessel.year },
+    { label: 'Make',        value: vessel.make },
+    { label: 'Model',       value: vessel.model },
+    { label: 'Condition',   value: vessel.condition || null },
+    { label: 'Category',    value: vessel.category || null },
+    { label: 'Refit Year',  value: vessel.refit_year || null },
+    { label: 'Length',      value: vessel.length_ft ? `${vessel.length_ft} ft` : null },
+    { label: 'Beam',        value: vessel.beam_ft ? `${vessel.beam_ft} ft` : null },
+    { label: 'Draft',       value: vessel.draft_ft ? `${vessel.draft_ft} ft` : null },
+    { label: 'Dry Weight',  value: vessel.dry_weight ? `${Number(vessel.dry_weight).toLocaleString()} lbs` : null },
+    { label: 'Hull Material', value: vessel.hull_material || null },
+    { label: 'Hull Color',    value: vessel.hull_finish || null },
+    { label: 'Fuel Type',     value: vessel.fuel_type || null },
+    { label: 'Cruise Speed',  value: vessel.cruise_speed ? `${vessel.cruise_speed} ${vessel.speed_unit ?? 'Knots'}` : null },
+    { label: 'Max Speed',     value: vessel.max_speed ? `${vessel.max_speed} ${vessel.speed_unit ?? 'Knots'}` : null },
+    { label: 'Fuel Capacity', value: vessel.fuel_tank_gallons ? `${vessel.fuel_tank_gallons.toLocaleString()} gal` : null },
+    { label: 'Fresh Water',   value: vessel.fresh_water_gallons ? `${vessel.fresh_water_gallons} gal` : null },
+    { label: 'Holding Tank',  value: vessel.holding_tank_gallons ? `${vessel.holding_tank_gallons} gal` : null },
+    ...engineSpecs,
+    { label: 'Cabins',        value: vessel.cabin_count ?? null },
+    { label: 'Sleeps',        value: vessel.sleep_count ?? null },
+    { label: 'Heads',         value: vessel.head_count ?? null },
+    { label: 'SeaKeeper',     value: vessel.sea_keeper === 'Yes' ? 'Yes' : null },
+    { label: 'Bow Thruster',  value: vessel.bow_thrusters === 'Yes' ? 'Yes' : null },
+    { label: 'Stern Thruster',value: vessel.stern_thrusters === 'Yes' ? 'Yes' : null },
+    { label: 'Air Conditioning', value: vessel.ac === 'Yes' ? 'Yes' : null },
+    { label: 'Trailer',       value: vessel.trailer || null },
+    { label: 'Status',        value: vessel.status === 'under_contract' ? 'Under Contract' : 'Available' },
+  ]
 
   return (
     <div className="bg-white min-h-screen">
@@ -78,44 +109,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
           {/* Specs Grid */}
           <h2 className="text-xl font-bold mb-6" style={{ color: '#0c1f3f' }}>Vessel Specifications</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-0 border border-gray-100 mb-10">
-            {[
-              // ── Identification ─────────────────────────────────────────────
-              { label: 'Year',        value: vessel.year },
-              { label: 'Make',        value: vessel.make },
-              { label: 'Model',       value: vessel.model },
-              { label: 'Condition',   value: vessel.condition || null },
-              { label: 'Category',    value: vessel.category || null },
-              { label: 'Refit Year',  value: vessel.refit_year || null },
-              // ── Dimensions ────────────────────────────────────────────────
-              { label: 'Length',      value: vessel.length_ft ? `${vessel.length_ft} ft` : null },
-              { label: 'Beam',        value: vessel.beam_ft ? `${vessel.beam_ft} ft` : null },
-              { label: 'Draft',       value: vessel.draft_ft ? `${vessel.draft_ft} ft` : null },
-              { label: 'Dry Weight',  value: vessel.dry_weight ? `${Number(vessel.dry_weight).toLocaleString()} lbs` : null },
-              // ── Hull ──────────────────────────────────────────────────────
-              { label: 'Hull Material', value: vessel.hull_material || null },
-              { label: 'Hull Color',    value: vessel.hull_finish || null },
-              // ── Performance ───────────────────────────────────────────────
-              { label: 'Fuel Type',     value: vessel.fuel_type || null },
-              { label: 'Cruise Speed',  value: vessel.cruise_speed ? `${vessel.cruise_speed} ${vessel.speed_unit ?? 'Knots'}` : null },
-              { label: 'Max Speed',     value: vessel.max_speed ? `${vessel.max_speed} ${vessel.speed_unit ?? 'Knots'}` : null },
-              { label: 'Fuel Capacity', value: vessel.fuel_tank_gallons ? `${vessel.fuel_tank_gallons.toLocaleString()} gal` : null },
-              { label: 'Fresh Water',   value: vessel.fresh_water_gallons ? `${vessel.fresh_water_gallons} gal` : null },
-              { label: 'Holding Tank',  value: vessel.holding_tank_gallons ? `${vessel.holding_tank_gallons} gal` : null },
-              // ── Engines ───────────────────────────────────────────────────
-              ...engineSpecs,
-              // ── Accommodations ────────────────────────────────────────────
-              { label: 'Cabins',      value: vessel.cabin_count ?? null },
-              { label: 'Sleeps',      value: vessel.sleep_count ?? null },
-              { label: 'Heads',       value: vessel.head_count ?? null },
-              // ── Features ──────────────────────────────────────────────────
-              { label: 'SeaKeeper',      value: vessel.sea_keeper === 'Yes' ? 'Yes' : vessel.sea_keeper === 'No' ? null : null },
-              { label: 'Bow Thruster',   value: vessel.bow_thrusters === 'Yes' ? 'Yes' : null },
-              { label: 'Stern Thruster', value: vessel.stern_thrusters === 'Yes' ? 'Yes' : null },
-              { label: 'Air Conditioning', value: vessel.ac === 'Yes' ? 'Yes' : null },
-              { label: 'Trailer',        value: vessel.trailer || null },
-              // ── Status ────────────────────────────────────────────────────
-              { label: 'Status', value: vessel.status === 'under_contract' ? 'Under Contract' : 'Available' },
-            ].filter(spec => spec.value !== null && spec.value !== undefined && spec.value !== '').map((spec) => (
+            {allSpecs.filter(spec => spec.value !== null && spec.value !== undefined && spec.value !== '').map((spec) => (
               <div key={spec.label} className="border border-gray-100 px-5 py-4">
                 <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">{spec.label}</p>
                 <p className="font-semibold text-sm" style={{ color: '#0c1f3f' }}>{String(spec.value)}</p>
