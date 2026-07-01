@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
   try {
     const res = await fetch(`${PROXY_URL}/listings?${params.toString()}`, {
-      next: { revalidate: 60 },
+      cache: 'no-store',
     })
     if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
 
