@@ -137,8 +137,10 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
   if (images.length === 0 && raw.DisplayPicture?.Large) images.push(raw.DisplayPicture.Large)
   if (images.length === 0 && raw.image) images.push(raw.image)
 
-  // Handle both slim list format (raw.hours) and full detail format (raw.engines[])
-  const engine = Array.isArray(raw.engines) ? raw.engines[0] : null
+  // Handle both slim list format (raw.hours) and full detail format (raw.Engines[])
+  // YachtBroker API returns capital-E "Engines"; our cache normalizes to lowercase
+  const engineList = raw.Engines ?? raw.engines ?? []
+  const engine = Array.isArray(engineList) ? engineList[0] : null
   const hours = raw.hours ?? engine?.Hours ?? 0
   const engineDetails = [engine?.Make, engine?.Model, engine?.HP ? `${engine.HP}HP` : null]
     .filter(Boolean)

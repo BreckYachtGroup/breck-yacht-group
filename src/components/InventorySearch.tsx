@@ -260,7 +260,7 @@ export default function InventorySearch() {
 
       {/* Sidebar — desktop */}
       <aside className="hidden lg:block w-64 shrink-0">
-        <div className="bg-white border border-gray-100 p-6 rounded sticky top-24">
+        <div className="bg-white border border-gray-100 p-6 rounded sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
           <h2 className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: '#0c1f3f' }}>
             Search Filters
           </h2>
