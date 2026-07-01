@@ -54,7 +54,7 @@ export type Listing = {
   broker_phone?: string
   is_cobrokerage?: boolean
   // All engines from the API
-  engines?: Array<{ Make: string; Model: string; HP: number; Hours: number | string }>
+  engines?: Array<{ Make: string; Model: string; HP: number; Hours: number | string; Year?: string | null; Type?: string }>
   // Extended specs
   condition?: string
   category?: string

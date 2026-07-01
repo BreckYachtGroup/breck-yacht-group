@@ -82,16 +82,29 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               { label: 'Fresh Water',   value: vessel.fresh_water_gallons ? `${vessel.fresh_water_gallons} gal` : null },
               { label: 'Holding Tank',  value: vessel.holding_tank_gallons ? `${vessel.holding_tank_gallons} gal` : null },
               // ── Engines ───────────────────────────────────────────────────
-              vessel.engines && vessel.engines.length > 1
-                ? { label: 'Engines', value: `${vessel.engines.length}×${vessel.engine_details ? ` ${vessel.engine_details}` : ''}` }
-                : { label: 'Engine',  value: vessel.engine_details || null },
-              ...(vessel.engines && vessel.engines.length > 1
-                ? vessel.engines.map((eng, i) => ({
-                    label: `Engine ${i + 1} Hours`,
-                    value: eng.Hours && Number(eng.Hours) > 0 ? Number(eng.Hours).toLocaleString() : null,
-                  }))
-                : [{ label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null }]
-              ),
+              (() => {
+                const engList = vessel.engines ?? []
+                // Build a readable engine description from structured fields
+                const engDesc = (eng: typeof engList[0]) => {
+                  const parts = [eng.Make, eng.Model, eng.HP && eng.HP > 0 ? `${eng.HP}HP` : null].filter(Boolean)
+                  return parts.length > 0 ? parts.join(' ') : (vessel.engine_details || null)
+                }
+                if (engList.length > 1) {
+                  const sampleDesc = engDesc(engList[0])
+                  return [
+                    { label: 'Engines', value: `${engList.length}× ${sampleDesc ?? ''}`.trim() || null },
+                    ...engList.map((eng, i) => ({
+                      label: `Engine ${i + 1} Hours`,
+                      value: eng.Hours && Number(eng.Hours) > 0 ? Number(eng.Hours).toLocaleString() : null,
+                    })),
+                  ]
+                }
+                const single = engList[0]
+                return [
+                  { label: 'Engine', value: single ? engDesc(single) : (vessel.engine_details || null) },
+                  { label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null },
+                ]
+              })().flat(),
               // ── Accommodations ────────────────────────────────────────────
               { label: 'Cabins',      value: vessel.cabin_count ?? null },
               { label: 'Sleeps',      value: vessel.sleep_count ?? null },
@@ -126,11 +139,11 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               <h2 className="text-xl font-bold mb-6" style={{ color: '#0c1f3f' }}>Video</h2>
               <div className="space-y-6">
                 {vessel.videos.map((vid, i) => {
-                  // Extract YouTube video ID from various URL formats
-                  const ytMatch = vid.URL.match(
-                    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-                  )
-                  if (!ytMatch) return null
+                  // Handle plain 11-char YouTube ID (e.g. "dQw4w9WgXcQ") OR full URL
+                  const ytId = /^[a-zA-Z0-9_-]{11}$/.test(vid.URL)
+                    ? vid.URL
+                    : vid.URL.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
+                  if (!ytId) return null
                   return (
                     <div key={i}>
                       {vid.Title && (
@@ -139,7 +152,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
                       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                         <iframe
                           className="absolute inset-0 w-full h-full rounded"
-                          src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                          src={`https://www.youtube.com/embed/${ytId}`}
                           title={vid.Title || 'Vessel Video'}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
