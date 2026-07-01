@@ -33,6 +33,26 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
 
   if (!vessel) notFound()
 
+  // Pre-compute engine specs to avoid TypeScript inference issues inside JSX array
+  type SpecItem = { label: string; value: string | number | null | undefined }
+  const engList = vessel.engines ?? []
+  const engDesc = (eng: typeof engList[0]) => {
+    const parts = [eng.Make, eng.Model, eng.HP && eng.HP > 0 ? `${eng.HP}HP` : null].filter(Boolean)
+    return parts.length > 0 ? parts.join(' ') : (vessel.engine_details || null)
+  }
+  const engineSpecs: SpecItem[] = engList.length > 1
+    ? [
+        { label: 'Engines', value: `${engList.length}× ${engDesc(engList[0]) ?? ''}`.trim() || null },
+        ...engList.map((eng, i) => ({
+          label: `Engine ${i + 1} Hours`,
+          value: eng.Hours && Number(eng.Hours) > 0 ? Number(eng.Hours).toLocaleString() : null,
+        })),
+      ]
+    : [
+        { label: 'Engine', value: engList[0] ? engDesc(engList[0]) : (vessel.engine_details || null) },
+        { label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null },
+      ]
+
   return (
     <div className="bg-white min-h-screen">
       {/* Image Gallery */}
@@ -82,29 +102,7 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
               { label: 'Fresh Water',   value: vessel.fresh_water_gallons ? `${vessel.fresh_water_gallons} gal` : null },
               { label: 'Holding Tank',  value: vessel.holding_tank_gallons ? `${vessel.holding_tank_gallons} gal` : null },
               // ── Engines ───────────────────────────────────────────────────
-              (() => {
-                const engList = vessel.engines ?? []
-                // Build a readable engine description from structured fields
-                const engDesc = (eng: typeof engList[0]) => {
-                  const parts = [eng.Make, eng.Model, eng.HP && eng.HP > 0 ? `${eng.HP}HP` : null].filter(Boolean)
-                  return parts.length > 0 ? parts.join(' ') : (vessel.engine_details || null)
-                }
-                if (engList.length > 1) {
-                  const sampleDesc = engDesc(engList[0])
-                  return [
-                    { label: 'Engines', value: `${engList.length}× ${sampleDesc ?? ''}`.trim() || null },
-                    ...engList.map((eng, i) => ({
-                      label: `Engine ${i + 1} Hours`,
-                      value: eng.Hours && Number(eng.Hours) > 0 ? Number(eng.Hours).toLocaleString() : null,
-                    })),
-                  ]
-                }
-                const single = engList[0]
-                return [
-                  { label: 'Engine', value: single ? engDesc(single) : (vessel.engine_details || null) },
-                  { label: 'Engine Hours', value: vessel.hours && Number(vessel.hours) > 0 ? Number(vessel.hours).toLocaleString() : null },
-                ]
-              })().flat(),
+              ...engineSpecs,
               // ── Accommodations ────────────────────────────────────────────
               { label: 'Cabins',      value: vessel.cabin_count ?? null },
               { label: 'Sleeps',      value: vessel.sleep_count ?? null },
