@@ -53,6 +53,7 @@ export default function InventorySearch() {
   const buildParams = useCallback((page: number) => {
     const p = new URLSearchParams()
     p.set('page', String(page))
+    if (showOwn)   p.set('bygOnly',   'true')
     if (make)      p.set('make',      make)
     if (model)     p.set('model',     model)
     if (state)     p.set('state',     state)
@@ -65,7 +66,7 @@ export default function InventorySearch() {
     if (minLength) p.set('minLength', minLength)
     if (maxLength) p.set('maxLength', maxLength)
     return p.toString()
-  }, [make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
+  }, [showOwn, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
 
   // ── Fetch page 1 (reset) or next page (append) ─────────────────────────────
   const fetchListings = useCallback(async (page: number, reset = false) => {
@@ -91,7 +92,7 @@ export default function InventorySearch() {
   useEffect(() => { fetchListings(1, true) }, [fetchListings])
 
   // ── Debounced re-search when server-side filters change ─────────────────────
-  const filtersKey = `${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
+  const filtersKey = `${showOwn}|${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
   const isFirstRender = useRef(true)
 
   useEffect(() => {
@@ -114,11 +115,10 @@ export default function InventorySearch() {
   // ── Client-side filters applied on top of server results ───────────────────
   const filtered = useMemo(() => {
     return vessels.filter(v => {
-      if (showOwn && v.is_cobrokerage) return false
       if (keyword && !`${v.name} ${v.make} ${v.model} ${v.location}`.toLowerCase().includes(keyword.toLowerCase())) return false
       return true
     })
-  }, [vessels, showOwn, keyword])
+  }, [vessels, keyword])
 
   // ── Shared input/label styles ───────────────────────────────────────────────
   const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
@@ -279,14 +279,14 @@ export default function InventorySearch() {
               className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
               style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
             >
-              All Listings
+              All Inventory
             </button>
             <button
               onClick={() => setShowOwn(true)}
               className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
               style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
             >
-              BYG Only
+              BYG Listings
             </button>
           </div>
         </div>
