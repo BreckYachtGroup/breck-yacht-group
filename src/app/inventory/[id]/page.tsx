@@ -123,8 +123,14 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
           {/* Textblocks — detailed equipment/spec sections from the listing broker */}
           {vessel.textblocks && vessel.textblocks.length > 0 && (
             <div className="space-y-8">
-              {vessel.textblocks.map((block, i) => (
-                block.Description && (
+              {vessel.textblocks
+                .filter(block =>
+                  block.Description &&
+                  // Strip Yachtr.com and similar MLS attribution blocks
+                  !block.Description.toLowerCase().includes('yachtr.com') &&
+                  !block.Description.toLowerCase().includes('listing mls')
+                )
+                .map((block, i) => (
                   <div key={i}>
                     {block.Title && (
                       <h2 className="text-xl font-bold mb-4" style={{ color: '#0c1f3f' }}>{block.Title}</h2>
@@ -134,8 +140,8 @@ export default async function VesselDetailPage({ params }: { params: Promise<{ i
                       dangerouslySetInnerHTML={{ __html: block.Description }}
                     />
                   </div>
-                )
-              ))}
+                ))
+              }
             </div>
           )}
         </div>
