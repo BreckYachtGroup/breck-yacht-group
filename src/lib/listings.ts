@@ -53,8 +53,35 @@ export type Listing = {
   broker_email?: string
   broker_phone?: string
   is_cobrokerage?: boolean
-  // All engines from the API — Make/Model/HP often empty, Hours is the useful field
+  // All engines from the API
   engines?: Array<{ Make: string; Model: string; HP: number; Hours: number | string }>
+  // Extended specs
+  condition?: string
+  category?: string
+  refit_year?: number | null
+  hull_material?: string
+  hull_finish?: string
+  draft_ft?: number | null
+  dry_weight?: string | null
+  cruise_speed?: number | null
+  max_speed?: number | null
+  speed_unit?: string
+  fuel_tank_gallons?: number | null
+  fresh_water_gallons?: number | null
+  holding_tank_gallons?: number | null
+  engine_qty?: number | null
+  sea_keeper?: string
+  bow_thrusters?: string
+  stern_thrusters?: string
+  trailer?: string
+  ac?: string
+  cabin_count?: number | null
+  sleep_count?: number | null
+  head_count?: number | null
+  notable_upgrades?: string
+  price_headline?: string
+  last_price_change?: { OldPrice: number; NewPrice: number; DateTime: string } | null
+  textblocks?: Array<{ Title: string; Description: string }>
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -184,6 +211,33 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
     broker_phone:   raw.ListingOwnerCell ?? raw.ListingOwnerPhone ?? '',
     is_cobrokerage: isCobrokerage,
     engines:        Array.isArray(engineList) ? engineList : [],
+    // Extended specs
+    condition:            raw.Condition ?? '',
+    category:             raw.Category ?? '',
+    refit_year:           raw.RefitYear ?? null,
+    hull_material:        raw.HullMaterial ?? '',
+    hull_finish:          raw.HullFinish ?? '',
+    draft_ft:             raw.MaximumDraftFeet ?? null,
+    dry_weight:           raw.DryWeight ?? null,
+    cruise_speed:         raw.CruiseSpeed ?? null,
+    max_speed:            raw.MaximumSpeed ?? null,
+    speed_unit:           raw.SpeedUnit ?? 'Knots',
+    fuel_tank_gallons:    raw.FuelTankCapacityGallons ?? null,
+    fresh_water_gallons:  raw.FreshWaterCapacityGallons ?? null,
+    holding_tank_gallons: raw.HoldingTankCapacityGallons ?? null,
+    engine_qty:           raw.EngineQty ?? null,
+    sea_keeper:           raw.SeaKeeper ?? '',
+    bow_thrusters:        raw.BowThrusters ?? '',
+    stern_thrusters:      raw.SternThrusters ?? '',
+    trailer:              raw.Trailer ?? '',
+    ac:                   raw.AC ?? '',
+    cabin_count:          raw.CabinCount ?? null,
+    sleep_count:          raw.SleepCount ?? null,
+    head_count:           raw.HeadCount ?? null,
+    notable_upgrades:     raw.NotableUpgrades ?? '',
+    price_headline:       raw.PriceHeadline ?? '',
+    last_price_change:    raw.LastPriceChange ?? null,
+    textblocks:           raw.Textblocks ?? [],
   }
 }
 
