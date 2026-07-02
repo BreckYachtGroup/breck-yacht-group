@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { calcEngineResidualValue, getBaselineEngineValue } from '@/lib/engineValues'
 
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
@@ -260,9 +261,49 @@ export async function POST(req: NextRequest) {
     }
 
     const adjFactor = condFactor * hoursFactor * engineFactor
-    const low  = round1k(rawLow  * adjFactor)
-    const mid  = round1k(rawMid  * adjFactor)
-    const high = round1k(rawHigh * adjFactor)
+    let compLow  = round1k(rawLow  * adjFactor)
+    let compMid  = round1k(rawMid  * adjFactor)
+    let compHigh = round1k(rawHigh * adjFactor)
+
+    // ── Engine residual value adjustment ─────────────────────────────────────
+    // Calculate user's actual engine package value vs baseline assumed in comps.
+    // Apply 65% of the delta so we don't double-count what comps already price in.
+    let engineBreakdown: {
+      label: string; msrpEach: number; residualEach: number
+      totalResidual: number; baselineDesc: string; baselineValue: number
+      delta: number; found: boolean
+    } | null = null
+
+    if (input.engine_make && input.engine_model && input.engine_count) {
+      const userEngines = calcEngineResidualValue({
+        make:       input.engine_make,
+        model:      input.engine_model,
+        count:      input.engine_count,
+        engineYear: input.year,
+        hours:      input.hours,
+      })
+      const baseline = getBaselineEngineValue(input.length_ft, input.year)
+      const delta    = Math.round((userEngines.totalResidual - baseline.totalResidual) * 0.65 / 1000) * 1000
+
+      compLow  += delta
+      compMid  += delta
+      compHigh += delta
+
+      engineBreakdown = {
+        label:         userEngines.label,
+        msrpEach:      userEngines.msrpEach,
+        residualEach:  userEngines.residualEach,
+        totalResidual: userEngines.totalResidual,
+        baselineDesc:  baseline.desc,
+        baselineValue: baseline.totalResidual,
+        delta,
+        found:         userEngines.found,
+      }
+    }
+
+    const low  = Math.max(0, compLow)
+    const mid  = Math.max(0, compMid)
+    const high = Math.max(0, compHigh)
 
     // Confidence
     const avgScore = topComps.reduce((s, c) => s + c.score, 0) / topComps.length
@@ -277,6 +318,7 @@ export async function POST(req: NextRequest) {
       high,
       confidence,
       comp_count:  topComps.length,
+      engine_breakdown: engineBreakdown,
       // Return top 6 comps anonymized — strip internal fields before response
       comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c),
       methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,

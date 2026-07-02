@@ -22,15 +22,27 @@ interface CompRow {
   location:  string
 }
 
+interface EngineBreakdown {
+  label:         string
+  msrpEach:      number
+  residualEach:  number
+  totalResidual: number
+  baselineDesc:  string
+  baselineValue: number
+  delta:         number
+  found:         boolean
+}
+
 interface ValuationResult {
-  low:         number
-  mid:         number
-  high:        number
-  confidence:  'high' | 'medium' | 'low'
-  comp_count:  number
-  comps:       CompRow[]
-  methodology: string
-  error?:      string
+  low:              number
+  mid:              number
+  high:             number
+  confidence:       'high' | 'medium' | 'low'
+  comp_count:       number
+  comps:            CompRow[]
+  methodology:      string
+  engine_breakdown: EngineBreakdown | null
+  error?:           string
 }
 
 const CONFIDENCE_COLOR = {
@@ -292,6 +304,29 @@ export default function ValuationLab() {
                   <span className="font-semibold" style={{ color: '#0c1f3f' }}>{result.comp_count}</span>
                 </div>
               </div>
+
+              {/* Engine breakdown */}
+              {result.engine_breakdown && result.engine_breakdown.found && (
+                <div className="bg-gray-50 border border-gray-100 rounded p-5 space-y-2 text-sm">
+                  <p className="text-xs tracking-widest uppercase text-gray-400 mb-3">Engine Package Analysis</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-gray-500">Your engines</span>
+                    <span className="font-medium" style={{ color: '#0c1f3f' }}>{result.engine_breakdown.label}</span>
+                    <span className="text-gray-500">Retail per engine</span>
+                    <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.msrpEach.toLocaleString()}</span>
+                    <span className="text-gray-500">Current residual (each)</span>
+                    <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.residualEach.toLocaleString()}</span>
+                    <span className="text-gray-500">Total engine package value</span>
+                    <span className="font-semibold" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.totalResidual.toLocaleString()}</span>
+                    <span className="text-gray-500">Comp baseline ({result.engine_breakdown.baselineDesc})</span>
+                    <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.baselineValue.toLocaleString()}</span>
+                    <span className="text-gray-500">Engine adjustment to valuation</span>
+                    <span className={`font-semibold ${result.engine_breakdown.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {result.engine_breakdown.delta >= 0 ? '+' : ''}${result.engine_breakdown.delta.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Methodology */}
               <p className="text-xs text-gray-400 italic">{result.methodology}</p>
