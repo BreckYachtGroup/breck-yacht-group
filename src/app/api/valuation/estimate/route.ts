@@ -226,7 +226,8 @@ export async function POST(req: NextRequest) {
       hours:          v.hours ?? 0,
       price:          Number(v.PriceUSD),
       location:       [v.City, v.State].filter(Boolean).join(', '),
-      url:            v.URL ?? v.DetailUrl ?? v.ListingUrl ?? v.Link ?? null,
+      // No URL field in MLS data — construct yachtbroker.org listing URL from ID
+      url:            v.ID ? `https://www.yachtbroker.org/listing/${v.ID}/` : null,
       score:          scoreComp(v, input),
       raw_engine_qty: v.EngineQty ?? null,   // used internally for engine factor — stripped before response
     }))
@@ -340,8 +341,6 @@ export async function POST(req: NextRequest) {
       confidence,
       comp_count:  topComps.length,
       engine_breakdown: engineBreakdown,
-      // Temporary: expose all keys from first raw listing to find the URL field name
-      _debug_raw_keys: raw.length > 0 ? Object.keys(raw[0]) : [],
       // Return top 6 comps anonymized — strip internal fields before response
       comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c), // url included
       methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Conservative/Most Likely/Optimistic = 30th/50th/75th percentile. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
