@@ -223,13 +223,22 @@ export async function POST(req: NextRequest) {
     }))
 
     scored.sort((a, b) => b.score - a.score)
-    const topComps = scored.slice(0, 20)
+
+    // Minimum score filter: exclude weak matches that barely resemble the subject vessel.
+    // A comp scoring below 30 fails to match on most key dimensions and would
+    // distort the price distribution — especially the conservative end.
+    const MIN_SCORE = 30
+    const qualifiedComps = scored.filter(c => c.score >= MIN_SCORE)
+    // Fall back to top 8 if filter is too aggressive
+    const topComps = qualifiedComps.length >= 4 ? qualifiedComps.slice(0, 20) : scored.slice(0, 8)
 
     // ── Price statistics ─────────────────────────────────────────────────────
     let prices = removeOutliers(topComps.map(c => c.price))
     const sorted = [...prices].sort((a, b) => a - b)
 
-    const rawLow  = percentile(sorted, 25)
+    // 30th/50th/75th — conservative raised from 25th to avoid low-quality outliers
+    // skewing the floor (weak comps survive IQR but drag down the left tail)
+    const rawLow  = percentile(sorted, 30)
     const rawMid  = percentile(sorted, 50)
     const rawHigh = percentile(sorted, 75)
 
@@ -309,7 +318,7 @@ export async function POST(req: NextRequest) {
       engine_breakdown: engineBreakdown,
       // Return top 6 comps anonymized — strip internal fields before response
       comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c),
-      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
+      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Conservative/Most Likely/Optimistic = 30th/50th/75th percentile of scored comps. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
     })
 
   } catch (err) {
