@@ -48,7 +48,7 @@ const BOAT_MAKES = [
   'Viking', 'Hatteras', 'Bertram', 'Cabo', 'Riviera', 'Ocean', 'Luhrs',
   'Tiara', 'Albemarle', 'Blackfin', 'Jarvis Newman', 'Spencer', 'Paul Mann',
   'Rybovich', 'Merritt', 'Winter Custom Yachts', 'Buddy Davis', 'Post',
-  'Striker', 'Topaz', 'Davis',
+  'Striker', 'Topaz', 'Davis', 'Garlington',
   // Luxury Motor Yachts
   'Princess', 'Sunseeker', 'Azimut', 'Ferretti', 'Pershing', 'Riva',
   'Benetti', 'Lurssen', 'Sunreef', 'Mangusta', 'Leopard', 'Cranchi',
