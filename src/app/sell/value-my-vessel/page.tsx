@@ -22,18 +22,12 @@ interface CompRow {
   url: string | null
 }
 
-interface EngineBreakdown {
-  label: string; msrpEach: number; residualEach: number
-  totalResidual: number; baselineDesc: string; baselineValue: number
-  delta: number; found: boolean
-}
-
 interface ValuationResult {
   low: number; mid: number; high: number
   confidence: 'high' | 'medium' | 'low'
   comp_count: number; comps: CompRow[]
   methodology: string
-  engine_breakdown: EngineBreakdown | null
+  engine_breakdown?: unknown // internal only — not displayed on public page
 }
 
 type Stage = 'input' | 'teaser' | 'unlocked'
@@ -293,29 +287,6 @@ export default function ValueMyVesselPage() {
                   <div className="bg-green-50 border border-green-100 rounded px-4 py-3 text-sm text-green-700">
                     ✓ Report unlocked. Austin will be in touch to compare notes.
                   </div>
-
-                  {/* Engine breakdown */}
-                  {result.engine_breakdown?.found && (
-                    <div className="bg-gray-50 border border-gray-100 rounded p-5 text-sm space-y-2">
-                      <p className="text-xs tracking-widest uppercase text-gray-400 mb-3">Engine Package Analysis</p>
-                      <div className="grid grid-cols-2 gap-y-2">
-                        <span className="text-gray-500">Your engines</span>
-                        <span className="font-medium" style={{ color: '#0c1f3f' }}>{result.engine_breakdown.label}</span>
-                        <span className="text-gray-500">Retail per engine</span>
-                        <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.msrpEach.toLocaleString()}</span>
-                        <span className="text-gray-500">Current residual (each)</span>
-                        <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.residualEach.toLocaleString()}</span>
-                        <span className="text-gray-500">Total package value</span>
-                        <span className="font-semibold" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.totalResidual.toLocaleString()}</span>
-                        <span className="text-gray-500">Comp baseline ({result.engine_breakdown.baselineDesc})</span>
-                        <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.baselineValue.toLocaleString()}</span>
-                        <span className="text-gray-500">Engine premium vs. baseline</span>
-                        <span className={`font-semibold ${result.engine_breakdown.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                          {result.engine_breakdown.delta >= 0 ? '+' : ''}${result.engine_breakdown.delta.toLocaleString()} <span className="text-xs font-normal text-gray-400">context only</span>
-                        </span>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Comp table */}
                   {result.comps.length > 0 && (
