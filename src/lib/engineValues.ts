@@ -76,10 +76,10 @@ const ENGINE_TABLE: Record<string, EngineEntry> = {
 // Format: [engine_count, msrp_per_engine]
 
 const LENGTH_BASELINES: Array<{ maxFt: number; count: number; msrpEach: number; desc: string }> = [
-  { maxFt: 24,  count: 1, msrpEach: 13000, desc: 'Single 150HP'       },
-  { maxFt: 28,  count: 2, msrpEach: 18000, desc: 'Twin 200HP'          },
-  { maxFt: 33,  count: 2, msrpEach: 23000, desc: 'Twin 250HP'          },
-  { maxFt: 38,  count: 2, msrpEach: 37000, desc: 'Twin 300HP'          },
+  { maxFt: 24,  count: 1, msrpEach: 14500, desc: 'Single 150HP'       },
+  { maxFt: 28,  count: 2, msrpEach: 21000, desc: 'Twin 200HP'          },
+  { maxFt: 33,  count: 2, msrpEach: 29000, desc: 'Twin 250HP'          },
+  { maxFt: 38,  count: 2, msrpEach: 37000, desc: 'Twin 300HP Yamaha'   },
   { maxFt: 42,  count: 3, msrpEach: 37000, desc: 'Triple 300HP'        },
   { maxFt: 48,  count: 3, msrpEach: 43000, desc: 'Triple 350HP'        },
   { maxFt: 999, count: 4, msrpEach: 43000, desc: 'Quad 350HP'          },
