@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
     // ── Fetch comp pool ──────────────────────────────────────────────────────
     // ±3 years keeps comps recent and avoids older, lower-priced boats skewing results
     const yearBuf = 3
-    const lenBuf  = 3   // tight — a 34ft boat compares to 31–37ft only
+    const lenBuf  = 2   // tight — a 34ft boat compares to 32–36ft only
     const params = new URLSearchParams({
       make:      input.make,
       minYear:   String(input.year - yearBuf),
