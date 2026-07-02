@@ -64,6 +64,7 @@ interface Comp {
   hours:          number
   price:          number
   location:       string
+  url:            string | null  // listing URL for comp verification
   score:          number
   raw_engine_qty: number | null  // internal — stripped before API response
 }
@@ -225,6 +226,7 @@ export async function POST(req: NextRequest) {
       hours:          v.hours ?? 0,
       price:          Number(v.PriceUSD),
       location:       [v.City, v.State].filter(Boolean).join(', '),
+      url:            v.URL ?? v.DetailUrl ?? v.ListingUrl ?? v.Link ?? null,
       score:          scoreComp(v, input),
       raw_engine_qty: v.EngineQty ?? null,   // used internally for engine factor — stripped before response
     }))
@@ -339,7 +341,7 @@ export async function POST(req: NextRequest) {
       comp_count:  topComps.length,
       engine_breakdown: engineBreakdown,
       // Return top 6 comps anonymized — strip internal fields before response
-      comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c),
+      comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c), // url included
       methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Conservative/Most Likely/Optimistic = 30th/50th/75th percentile. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
     })
 

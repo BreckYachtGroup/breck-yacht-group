@@ -20,6 +20,7 @@ interface CompRow {
   hours:     number
   price:     number
   location:  string
+  url:       string | null
 }
 
 interface EngineBreakdown {
@@ -348,7 +349,11 @@ export default function ValuationLab() {
                       <tbody>
                         {result.comps.map((c, i) => (
                           <tr key={i} className="border-b border-gray-50">
-                            <td className="py-2 pr-4 font-medium" style={{ color: '#0c1f3f' }}>{c.name}</td>
+                            <td className="py-2 pr-4 font-medium" style={{ color: '#0c1f3f' }}>
+                              {c.url
+                                ? <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: '#0c1f3f' }}>{c.name}</a>
+                                : c.name}
+                            </td>
                             <td className="py-2 pr-4 text-gray-500">{c.year}</td>
                             <td className="py-2 pr-4 text-gray-500">{c.length_ft}ft</td>
                             <td className="py-2 pr-4 text-gray-500">{c.hours > 0 ? c.hours.toLocaleString() : '—'}</td>
