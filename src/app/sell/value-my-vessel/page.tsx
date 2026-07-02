@@ -228,7 +228,7 @@ export default function ValueMyVesselPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Engines</label>
                   <select value={form.engine_count} onChange={e => set('engine_count', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded">
-                    <option value="">Unknown</option>
+                    <option value="">Quantity</option>
                     <option value="1">Single</option>
                     <option value="2">Twin</option>
                     <option value="3">Triple</option>
