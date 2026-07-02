@@ -266,17 +266,17 @@ export default function ValueMyVesselPage() {
               <div>
                 <p className="text-xs tracking-widest uppercase text-gray-400 mb-4">Estimated Market Value</p>
                 <div className="grid grid-cols-3 gap-3 text-center mb-2">
-                  <div className="border border-gray-100 py-5 px-2">
-                    <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Conservative</p>
-                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.low)}</p>
+                  <div className="border border-gray-100 py-5 px-2 flex flex-col items-center justify-between min-h-[90px]">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Low</p>
+                    <p className="text-xl font-bold mt-auto" style={{ color: '#0c1f3f' }}>{fmtK(result.low)}</p>
                   </div>
-                  <div className="border-2 py-5 px-2" style={{ borderColor: '#c9a84c' }}>
-                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#c9a84c' }}>Most Likely</p>
-                    <p className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.mid)}</p>
+                  <div className="border-2 py-5 px-2 flex flex-col items-center justify-between min-h-[90px]" style={{ borderColor: '#c9a84c' }}>
+                    <p className="text-xs uppercase tracking-wide mb-2" style={{ color: '#c9a84c' }}>Mid</p>
+                    <p className="text-2xl font-bold mt-auto" style={{ color: '#0c1f3f' }}>{fmtK(result.mid)}</p>
                   </div>
-                  <div className="border border-gray-100 py-5 px-2">
-                    <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Optimistic</p>
-                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.high)}</p>
+                  <div className="border border-gray-100 py-5 px-2 flex flex-col items-center justify-between min-h-[90px]">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">High</p>
+                    <p className="text-xl font-bold mt-auto" style={{ color: '#0c1f3f' }}>{fmtK(result.high)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-gray-400 mt-2">
