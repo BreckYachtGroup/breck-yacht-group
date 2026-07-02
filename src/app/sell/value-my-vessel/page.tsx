@@ -39,6 +39,13 @@ const YEARS = Array.from({ length: CURRENT_YEAR - 1979 }, (_, i) => CURRENT_YEAR
 
 const CONFIDENCE_COLOR = { high: 'text-green-600', medium: 'text-yellow-600', low: 'text-red-500' }
 
+// Compact price formatter: $455,000 → $455K, $1,200,000 → $1.2M
+function fmtK(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(3).replace(/\.?0+$/, '')}M`
+  if (n >= 1_000)     return `$${Math.round(n / 1_000)}K`
+  return `$${n.toLocaleString()}`
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ValueMyVesselPage() {
@@ -261,15 +268,15 @@ export default function ValueMyVesselPage() {
                 <div className="grid grid-cols-3 gap-3 text-center mb-2">
                   <div className="border border-gray-100 py-5 px-2">
                     <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Conservative</p>
-                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>${result.low.toLocaleString()}</p>
+                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.low)}</p>
                   </div>
                   <div className="border-2 py-5 px-2" style={{ borderColor: '#c9a84c' }}>
                     <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#c9a84c' }}>Most Likely</p>
-                    <p className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>${result.mid.toLocaleString()}</p>
+                    <p className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.mid)}</p>
                   </div>
                   <div className="border border-gray-100 py-5 px-2">
                     <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Optimistic</p>
-                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>${result.high.toLocaleString()}</p>
+                    <p className="text-xl font-bold" style={{ color: '#0c1f3f' }}>{fmtK(result.high)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-gray-400 mt-2">
