@@ -268,11 +268,14 @@ export async function POST(req: NextRequest) {
 
     const adjFactor = condFactor * hoursFactor
     let compMid  = round1k(rawMid  * adjFactor)
-    let compHigh = round1k(rawHigh * adjFactor)
-    // Floor: conservative can't be more than 28% below mid.
-    // Prevents cheap outlier comps (e.g. older/smaller boats that barely pass scoring)
-    // from producing an unrealistically low floor for the seller.
-    let compLow  = Math.max(round1k(rawLow * adjFactor), round1k(compMid * 0.72))
+
+    // Enforce minimum spread: when comps cluster tightly (e.g. 6 nearly identical listings),
+    // the percentile range collapses. Conservative and Optimistic should always reflect
+    // real-world market uncertainty — negotiation, timing, condition differences.
+    // Conservative: whichever is LOWER — the percentile or 13% below mid
+    // Optimistic:   whichever is HIGHER — the percentile or 13% above mid
+    let compLow  = Math.min(round1k(rawLow  * adjFactor), round1k(compMid * 0.87))
+    let compHigh = Math.max(round1k(rawHigh * adjFactor), round1k(compMid * 1.13))
 
     // ── Engine residual value adjustment ─────────────────────────────────────
     // Calculate user's actual engine package value vs baseline assumed in comps.
