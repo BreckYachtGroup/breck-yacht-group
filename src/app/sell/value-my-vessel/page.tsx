@@ -11,8 +11,10 @@
  * behind name + email capture. Gate submit emails Austin via /api/valuation.
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ValuationForm from '@/components/ValuationForm'
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,29 @@ export default function ValueMyVesselPage() {
   const [gate, setGate]           = useState({ firstName: '', lastName: '', email: '', phone: '' })
   const [gateLoading, setGateLoading] = useState(false)
   const [gateError, setGateError]   = useState<string | null>(null)
+  const gateTurnstileRef = useRef<HTMLDivElement>(null)
+  const gateWidgetId     = useRef<string | null>(null)
+
+  // Load Turnstile for the gate form
+  useEffect(() => {
+    const scriptId = 'cf-turnstile-script'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+      script.async = true; script.defer = true
+      document.head.appendChild(script)
+    }
+    const render = () => {
+      if (gateTurnstileRef.current && (window as any).turnstile && !gateWidgetId.current) {
+        gateWidgetId.current = (window as any).turnstile.render(gateTurnstileRef.current, { sitekey: SITE_KEY, theme: 'light' })
+      }
+    }
+    if ((window as any).turnstile) { render() } else {
+      const interval = setInterval(() => { if ((window as any).turnstile) { render(); clearInterval(interval) } }, 100)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const setG = (k: string, v: string) => setGate(g => ({ ...g, [k]: v }))
@@ -93,6 +118,8 @@ export default function ValueMyVesselPage() {
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault()
     if (!result) return
+    const token = (window as any).turnstile?.getResponse(gateWidgetId.current)
+    if (!token) { setGateError('Please complete the security check.'); return }
     setGateLoading(true); setGateError(null)
     try {
       const emailRes = await fetch('/api/valuation', {
@@ -113,7 +140,7 @@ export default function ValueMyVesselPage() {
           notes:     `AI Estimate — Conservative $${result.low.toLocaleString()} / Mid $${result.mid.toLocaleString()} / High $${result.high.toLocaleString()}. Confidence: ${result.confidence}. Comps: ${result.comp_count}.`,
         }),
       })
-      if (!emailRes.ok) { setGateError('Failed to send — please check your email and try again.'); return }
+      if (!emailRes.ok) { setGateError('Failed to send — please check your email and try again.'); ;(window as any).turnstile?.reset(gateWidgetId.current); return }
       setStage('unlocked')
     } catch {
       setGateError('Something went wrong. Please try again.')
@@ -271,6 +298,7 @@ export default function ValueMyVesselPage() {
                     <input type="tel" placeholder="Phone (optional)" value={gate.phone}
                       onChange={e => setG('phone', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded" />
+                    <div ref={gateTurnstileRef} />
                     {gateError && <p className="text-red-500 text-xs">{gateError}</p>}
                     <button type="submit" disabled={gateLoading}
                       className="w-full py-3 text-sm font-semibold tracking-widest uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-50 rounded"
