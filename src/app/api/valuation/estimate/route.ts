@@ -231,10 +231,15 @@ export async function POST(req: NextRequest) {
 
     scored.sort((a, b) => b.score - a.score)
 
-    // Hard length cap — enforced on every comp regardless of score or fallback.
-    // A 76ft Viking is never a valid comp for a 42ft Viking. Max ±5ft absolute.
-    const MAX_LEN_DIFF = 5
-    const lengthCapped = scored.filter(c => Math.abs(c.length_ft - input.length_ft) <= MAX_LEN_DIFF)
+    // Hard caps — enforced on every comp regardless of score or fallback.
+    // The proxy does not reliably honor minYear/maxYear/minLength/maxLength query params,
+    // so we enforce these as absolute post-score filters.
+    const MAX_LEN_DIFF  = 5           // never more than 5ft different
+    const MAX_YEAR_DIFF = yearBuf + 1 // 1yr buffer + 1 grace = ±2 for yearBuf=1
+    const lengthCapped = scored.filter(c =>
+      Math.abs(c.length_ft - input.length_ft) <= MAX_LEN_DIFF &&
+      Math.abs(c.year      - input.year)       <= MAX_YEAR_DIFF
+    )
 
     // Minimum score filter: exclude weak matches that barely resemble the subject vessel.
     const MIN_SCORE = 40
