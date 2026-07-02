@@ -95,7 +95,7 @@ export default function ValueMyVesselPage() {
     if (!result) return
     setGateLoading(true); setGateError(null)
     try {
-      await fetch('/api/valuation', {
+      const emailRes = await fetch('/api/valuation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,6 +113,7 @@ export default function ValueMyVesselPage() {
           notes:     `AI Estimate — Conservative $${result.low.toLocaleString()} / Mid $${result.mid.toLocaleString()} / High $${result.high.toLocaleString()}. Confidence: ${result.confidence}. Comps: ${result.comp_count}.`,
         }),
       })
+      if (!emailRes.ok) { setGateError('Failed to send — please check your email and try again.'); return }
       setStage('unlocked')
     } catch {
       setGateError('Something went wrong. Please try again.')
