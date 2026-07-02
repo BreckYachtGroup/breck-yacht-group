@@ -330,6 +330,7 @@ export default function ValuationLab() {
 
               {/* Methodology */}
               <p className="text-xs text-gray-400 italic">{result.methodology}</p>
+              <p className="text-xs text-gray-400 italic">9% list-to-sale discount applied to all comps (asking → estimated transaction price).</p>
 
               {/* Comp table */}
               {result.comps.length > 0 && (

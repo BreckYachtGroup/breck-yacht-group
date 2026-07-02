@@ -18,6 +18,11 @@ import { calcEngineResidualValue, getBaselineEngineValue } from '@/lib/engineVal
 
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
+// List-to-sale discount: comp data is asking prices, not closed transactions.
+// Marine market data shows center consoles / sportfish close 8–10% below asking on average.
+// Applying 9% discount to all comp prices before percentile calculation.
+const LIST_TO_SALE_DISCOUNT = 0.91
+
 // Condition multipliers applied to median comp price
 const CONDITION_FACTORS: Record<string, number> = {
   excellent: 1.08,
@@ -235,7 +240,8 @@ export async function POST(req: NextRequest) {
     const topComps = qualifiedComps.length >= 4 ? qualifiedComps.slice(0, 20) : scored.slice(0, 8)
 
     // ── Price statistics ─────────────────────────────────────────────────────
-    let prices = removeOutliers(topComps.map(c => c.price))
+    // Apply list-to-sale discount before percentile calc — comps are asking prices, not sold prices
+    let prices = removeOutliers(topComps.map(c => c.price * LIST_TO_SALE_DISCOUNT))
     const sorted = [...prices].sort((a, b) => a - b)
 
     // 30th/50th/75th — conservative raised from 25th to avoid low-quality outliers
