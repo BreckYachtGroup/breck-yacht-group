@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 
 type Post = {
   id: string
@@ -68,11 +69,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           {post.excerpt}
         </p>
 
-        {/* Post body — renders line breaks */}
+        {/* Post body — renders markdown */}
         <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed">
-          {post.content.split('\n').map((para, i) =>
-            para.trim() ? <p key={i} className="mb-5">{para}</p> : null
-          )}
+          <ReactMarkdown
+            components={{
+              h2: ({ children }) => <h2 className="text-2xl font-bold mt-10 mb-4" style={{ color: '#0c1f3f' }}>{children}</h2>,
+              h3: ({ children }) => <h3 className="text-xl font-bold mt-8 mb-3" style={{ color: '#0c1f3f' }}>{children}</h3>,
+              p:  ({ children }) => <p className="mb-5">{children}</p>,
+              strong: ({ children }) => <strong className="font-semibold" style={{ color: '#0c1f3f' }}>{children}</strong>,
+              hr: () => <hr className="my-10 border-gray-200" />,
+              ul: ({ children }) => <ul className="list-disc pl-6 mb-5 space-y-2">{children}</ul>,
+              li: ({ children }) => <li>{children}</li>,
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
       </div>
     </div>
