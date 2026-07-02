@@ -27,9 +27,10 @@ export async function POST(req: NextRequest) {
     }
 
     await resend.emails.send({
-      from: 'Breck Yacht Group <noreply@breckyachtgroup.com>',
+      from: 'Breck Yacht Group <leads@breckyachtgroup.com>',
       to: 'austin@breckyachtgroup.com',
-      subject: `New Vessel Inquiry — ${vesselName}`,
+      replyTo: email,
+      subject: `New Inquiry — ${name} | ${vesselName}`,
       html: `
         <h2>New Vessel Inquiry</h2>
         <p><strong>Vessel:</strong> ${vesselName}</p>

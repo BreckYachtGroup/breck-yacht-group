@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
     const { firstName, lastName, email, phone, year, make, model, length, hours, engines, location, notes } = await req.json()
 
     await resend.emails.send({
-      from: 'Breck Yacht Group <noreply@breckyachtgroup.com>',
+      from: 'Breck Yacht Group <leads@breckyachtgroup.com>',
       to: 'austin@breckyachtgroup.com',
-      subject: `Valuation Request — ${year} ${make} ${model}`,
+      replyTo: email, // hitting reply goes straight to the lead
+      subject: `New Valuation Lead — ${firstName} ${lastName} | ${year} ${make} ${model}`,
       html: `
         <h2>Vessel Valuation Request</h2>
         <p><strong>Name:</strong> ${firstName} ${lastName}</p>
