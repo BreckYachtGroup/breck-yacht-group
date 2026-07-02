@@ -78,11 +78,13 @@ function scoreComp(comp: any, input: ValuationInput): number {
   else if (yearDiff <= 5)  score += 4
 
   // Length proximity — max 25 pts
+  // Tight: a 2ft difference on a 34ft boat is a different product class
   const lenDiff = Math.abs((comp.DisplayLengthFeet ?? 0) - input.length_ft)
   if      (lenDiff === 0)  score += 25
-  else if (lenDiff <= 2)   score += 20
-  else if (lenDiff <= 4)   score += 12
-  else if (lenDiff <= 7)   score += 5
+  else if (lenDiff <= 1)   score += 20
+  else if (lenDiff <= 2)   score += 12
+  else if (lenDiff <= 3)   score += 4
+  // >3ft: 0 pts — excluded by min score filter in practice
 
   // Model match — max 25 pts
   if (input.model) {
@@ -164,7 +166,7 @@ export async function POST(req: NextRequest) {
     // ── Fetch comp pool ──────────────────────────────────────────────────────
     // ±3 years keeps comps recent and avoids older, lower-priced boats skewing results
     const yearBuf = 3
-    const lenBuf  = 8
+    const lenBuf  = 3   // tight — a 34ft boat compares to 31–37ft only
     const params = new URLSearchParams({
       make:      input.make,
       minYear:   String(input.year - yearBuf),
@@ -321,7 +323,7 @@ export async function POST(req: NextRequest) {
       engine_breakdown: engineBreakdown,
       // Return top 6 comps anonymized — strip internal fields before response
       comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c),
-      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Conservative/Most Likely/Optimistic = 30th/50th/75th percentile of scored comps. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
+      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Conservative/Most Likely/Optimistic = 30th/50th/75th percentile. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
     })
 
   } catch (err) {
