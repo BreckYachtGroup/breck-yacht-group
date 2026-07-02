@@ -25,16 +25,28 @@ const CONDITION_FACTORS: Record<string, number> = {
   poor:      0.74,
 }
 
+// Engine count adjustments relative to single-engine baseline
+// Comps are typically a mix — this normalizes for engine count mismatch
+const ENGINE_COUNT_FACTORS: Record<number, number> = {
+  1: 0.82,   // single engine — significantly lower than twin
+  2: 1.00,   // twin — market baseline for most center consoles
+  3: 1.22,   // triple — premium over twin
+  4: 1.40,   // quad — significant premium
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ValuationInput {
-  year:      number
-  make:      string
-  model?:    string
-  length_ft: number
-  hours?:    number
-  condition: 'excellent' | 'good' | 'fair' | 'poor'
-  state?:    string
+  year:          number
+  make:          string
+  model?:        string
+  length_ft:     number
+  hours?:        number
+  condition:     'excellent' | 'good' | 'fair' | 'poor'
+  state?:        string
+  engine_count?: number   // 1, 2, 3, or 4
+  engine_make?:  string   // Mercury, Yamaha, Volvo, etc.
+  engine_model?: string   // Verado 400, F350, etc.
 }
 
 interface Comp {
@@ -89,6 +101,12 @@ function scoreComp(comp: any, input: ValuationInput): number {
     score += 10
   }
 
+  // Engine count match — max 15 pts
+  if (input.engine_count != null && comp.EngineQty != null) {
+    if (comp.EngineQty === input.engine_count) score += 15
+    else if (Math.abs(comp.EngineQty - input.engine_count) === 1) score += 5
+  }
+
   return score
 }
 
@@ -129,13 +147,16 @@ export async function POST(req: NextRequest) {
     }
 
     const input: ValuationInput = {
-      year:      Number(body.year),
-      make:      String(body.make).trim(),
-      model:     body.model ? String(body.model).trim() : undefined,
-      length_ft: Number(body.length_ft),
-      hours:     body.hours != null ? Number(body.hours) : undefined,
-      condition: body.condition,
-      state:     body.state ? String(body.state).trim() : undefined,
+      year:          Number(body.year),
+      make:          String(body.make).trim(),
+      model:         body.model ? String(body.model).trim() : undefined,
+      length_ft:     Number(body.length_ft),
+      hours:         body.hours != null ? Number(body.hours) : undefined,
+      condition:     body.condition,
+      state:         body.state ? String(body.state).trim() : undefined,
+      engine_count:  body.engine_count ? Number(body.engine_count) : undefined,
+      engine_make:   body.engine_make ? String(body.engine_make).trim() : undefined,
+      engine_model:  body.engine_model ? String(body.engine_model).trim() : undefined,
     }
 
     // ── Fetch comp pool ──────────────────────────────────────────────────────
@@ -187,15 +208,16 @@ export async function POST(req: NextRequest) {
 
     // ── Score, rank, trim ────────────────────────────────────────────────────
     const scored: Comp[] = raw.map(v => ({
-      name:      v.VesselName || [v.Year, v.Manufacturer, v.Model].filter(Boolean).join(' '),
-      year:      v.Year ?? 0,
-      make:      v.Manufacturer ?? '',
-      model:     v.Model ?? '',
-      length_ft: v.DisplayLengthFeet ?? 0,
-      hours:     v.hours ?? 0,
-      price:     Number(v.PriceUSD),
-      location:  [v.City, v.State].filter(Boolean).join(', '),
-      score:     scoreComp(v, input),
+      name:           v.VesselName || [v.Year, v.Manufacturer, v.Model].filter(Boolean).join(' '),
+      year:           v.Year ?? 0,
+      make:           v.Manufacturer ?? '',
+      model:          v.Model ?? '',
+      length_ft:      v.DisplayLengthFeet ?? 0,
+      hours:          v.hours ?? 0,
+      price:          Number(v.PriceUSD),
+      location:       [v.City, v.State].filter(Boolean).join(', '),
+      score:          scoreComp(v, input),
+      raw_engine_qty: v.EngineQty ?? null,   // used internally for engine factor — stripped before response
     }))
 
     scored.sort((a, b) => b.score - a.score)
@@ -221,7 +243,23 @@ export async function POST(req: NextRequest) {
       hoursFactor = Math.max(0.90, Math.min(1.10, 1 - (delta / expectedHours) * 0.10))
     }
 
-    const adjFactor = condFactor * hoursFactor
+    // Engine count adjustment — normalize comp pool (mostly twins) to user's config
+    // We calculate what fraction of comps match engine count, then apply factor
+    let engineFactor = 1.0
+    if (input.engine_count != null) {
+      const userFactor  = ENGINE_COUNT_FACTORS[input.engine_count] ?? 1.0
+      // Estimate avg engine count of comp pool (default twin = 1.0 baseline)
+      const compEngineAvg = topComps.reduce((sum, c) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const qty = (c as any).raw_engine_qty
+        return sum + (ENGINE_COUNT_FACTORS[qty] ?? 1.0)
+      }, 0) / topComps.length
+      engineFactor = userFactor / (compEngineAvg || 1.0)
+      // Cap adjustment at ±40% to avoid wild swings
+      engineFactor = Math.max(0.60, Math.min(1.40, engineFactor))
+    }
+
+    const adjFactor = condFactor * hoursFactor * engineFactor
     const low  = round1k(rawLow  * adjFactor)
     const mid  = round1k(rawMid  * adjFactor)
     const high = round1k(rawHigh * adjFactor)
@@ -239,9 +277,9 @@ export async function POST(req: NextRequest) {
       high,
       confidence,
       comp_count:  topComps.length,
-      // Return top 6 comps anonymized — no listing IDs exposed
-      comps: topComps.slice(0, 6).map(({ score: _s, ...c }) => c),
-      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft of your vessel's length. Adjusted for ${input.condition} condition${input.hours != null ? ' and engine hours' : ''}.`,
+      // Return top 6 comps anonymized — strip internal fields before response
+      comps: topComps.slice(0, 6).map(({ score: _s, raw_engine_qty: _e, ...c }) => c),
+      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Adjusted for ${input.condition} condition${input.hours != null ? ', engine hours' : ''}${input.engine_count != null ? `, and ${input.engine_count}-engine configuration` : ''}.`,
     })
 
   } catch (err) {

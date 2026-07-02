@@ -41,13 +41,16 @@ const CONFIDENCE_COLOR = {
 
 export default function ValuationLab() {
   const [form, setForm] = useState({
-    year:      String(CURRENT_YEAR - 2),
-    make:      '',
-    model:     '',
-    length_ft: '',
-    hours:     '',
-    condition: 'good',
-    state:     '',
+    year:         String(CURRENT_YEAR - 2),
+    make:         '',
+    model:        '',
+    length_ft:    '',
+    hours:        '',
+    condition:    'good',
+    state:        '',
+    engine_count: '',
+    engine_make:  '',
+    engine_model: '',
   })
   const [result, setResult]   = useState<ValuationResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -66,13 +69,16 @@ export default function ValuationLab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          year:      Number(form.year),
-          make:      form.make,
-          model:     form.model || undefined,
-          length_ft: Number(form.length_ft),
-          hours:     form.hours ? Number(form.hours) : undefined,
-          condition: form.condition,
-          state:     form.state || undefined,
+          year:         Number(form.year),
+          make:         form.make,
+          model:        form.model || undefined,
+          length_ft:    Number(form.length_ft),
+          hours:        form.hours ? Number(form.hours) : undefined,
+          condition:    form.condition,
+          state:        form.state || undefined,
+          engine_count: form.engine_count ? Number(form.engine_count) : undefined,
+          engine_make:  form.engine_make || undefined,
+          engine_model: form.engine_model || undefined,
         }),
       })
       const data = await res.json()
@@ -184,7 +190,44 @@ export default function ValuationLab() {
                 </select>
               </div>
 
-              <div className="col-span-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Number of Engines</label>
+                <select
+                  value={form.engine_count}
+                  onChange={e => set('engine_count', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded"
+                >
+                  <option value="">Unknown</option>
+                  <option value="1">1 — Single</option>
+                  <option value="2">2 — Twin</option>
+                  <option value="3">3 — Triple</option>
+                  <option value="4">4 — Quad</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Engine Make</label>
+                <input
+                  type="text"
+                  value={form.engine_make}
+                  onChange={e => set('engine_make', e.target.value)}
+                  placeholder="e.g. Mercury, Yamaha, Volvo"
+                  className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Engine Model / Series</label>
+                <input
+                  type="text"
+                  value={form.engine_model}
+                  onChange={e => set('engine_model', e.target.value)}
+                  placeholder="e.g. Verado 400, F350, V8"
+                  className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded"
+                />
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">State (optional)</label>
                 <input
                   type="text"
