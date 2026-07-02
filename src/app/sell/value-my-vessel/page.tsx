@@ -43,18 +43,29 @@ const BOAT_MAKES = [
   'Grady-White', 'Boston Whaler', 'Pursuit', 'Everglades', 'Hydra-Sports',
   'Scout', 'Cobia', 'Robalo', 'Sea Fox', 'Mako', 'Sailfish', 'Release',
   'World Cat', 'Midnight Express', 'Statement Marine', 'Nor-Tech',
+  'Jupiter', 'Intrepid', 'Cape Horn', 'Pro-Line', 'Aquasport',
   // Sportfish / Convertibles
   'Viking', 'Hatteras', 'Bertram', 'Cabo', 'Riviera', 'Ocean', 'Luhrs',
   'Tiara', 'Albemarle', 'Blackfin', 'Jarvis Newman', 'Spencer', 'Paul Mann',
-  'Rybovich', 'Merritt', 'Winter Custom Yachts',
+  'Rybovich', 'Merritt', 'Winter Custom Yachts', 'Buddy Davis', 'Post',
+  'Striker', 'Topaz', 'Davis',
   // Luxury Motor Yachts
   'Princess', 'Sunseeker', 'Azimut', 'Ferretti', 'Pershing', 'Riva',
   'Benetti', 'Lurssen', 'Sunreef', 'Mangusta', 'Leopard', 'Cranchi',
+  'Sanlorenzo', 'Monte Carlo Yachts', 'Absolute', 'Numarine', 'Westport',
+  'Feadship', 'Amels', 'Heesen', 'Baglietto', 'Sealine',
+  // Catamarans
+  'Lagoon', 'Fountaine Pajot', 'Leopard', 'Privilege',
   // Performance
-  'Cigarette', 'Fountain', 'Formula', 'Scarab',
+  'Cigarette', 'Fountain', 'Formula', 'Scarab', 'Donzi', 'Baja', 'Glasstream',
+  // Recreational / General
+  'Sea Ray', 'Chaparral', 'Regal', 'Cobalt', 'Four Winns', 'Wellcraft',
+  'Chris-Craft', 'Jeanneau', 'Bavaria', 'Sea Hunt', 'Key West', 'Nautic Star',
   // Walkarounds / Dual Console
   'Edgewater', 'Pathfinder', 'Ranger', 'Skeeter', 'Tidewater',
-].sort()
+  // Trawlers / Motor Yachts
+  'Grand Banks', 'Nordhavn', 'Kadey-Krogen', 'Ocean Alexander', 'DeFever', 'Selene',
+].filter((v, i, a) => a.indexOf(v) === i).sort()
 
 const CONFIDENCE_COLOR = { high: 'text-green-600', medium: 'text-yellow-600', low: 'text-red-500' }
 
