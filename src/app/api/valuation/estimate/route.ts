@@ -274,8 +274,8 @@ export async function POST(req: NextRequest) {
     // real-world market uncertainty — negotiation, timing, condition differences.
     // Conservative: whichever is LOWER — the percentile or 13% below mid
     // Optimistic:   whichever is HIGHER — the percentile or 13% above mid
-    let compLow  = Math.min(round1k(rawLow  * adjFactor), round1k(compMid * 0.87))
-    let compHigh = Math.max(round1k(rawHigh * adjFactor), round1k(compMid * 1.13))
+    let compLow  = Math.min(round1k(rawLow  * adjFactor), round1k(compMid * 0.91))
+    let compHigh = Math.max(round1k(rawHigh * adjFactor), round1k(compMid * 1.09))
 
     // ── Engine residual value adjustment ─────────────────────────────────────
     // Calculate user's actual engine package value vs baseline assumed in comps.
