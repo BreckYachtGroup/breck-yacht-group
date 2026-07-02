@@ -43,6 +43,7 @@ interface ValuationResult {
   comps:            CompRow[]
   methodology:      string
   engine_breakdown: EngineBreakdown | null
+  _debug_raw_keys?: string[]
   error?:           string
 }
 
@@ -331,6 +332,14 @@ export default function ValuationLab() {
 
               {/* Methodology */}
               <p className="text-xs text-gray-400 italic">{result.methodology}</p>
+
+              {/* Debug: raw MLS field names — remove once URL field is identified */}
+              {result._debug_raw_keys && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded text-xs">
+                  <p className="font-semibold text-yellow-800 mb-2">DEBUG — Raw MLS fields (delete after):</p>
+                  <p className="text-yellow-700 break-all">{result._debug_raw_keys.join(', ')}</p>
+                </div>
+              )}
               <p className="text-xs text-gray-400 italic">9% list-to-sale discount applied to all comps (asking → estimated transaction price).</p>
 
               {/* Comp table */}
