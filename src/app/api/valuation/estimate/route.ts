@@ -226,8 +226,8 @@ export async function POST(req: NextRequest) {
       hours:          v.hours ?? 0,
       price:          Number(v.PriceUSD),
       location:       [v.City, v.State].filter(Boolean).join(', '),
-      // No URL field in MLS data — construct yachtbroker.org listing URL from ID
-      url:            v.ID ? `https://www.yachtbroker.org/listing/${v.ID}/` : null,
+      // Link to BYG's own inventory page — keeps users on site, same ID the proxy uses
+      url:            v.ID ? `https://breckyachtgroup.com/inventory/${v.ID}` : null,
       score:          scoreComp(v, input),
       raw_engine_qty: v.EngineQty ?? null,   // used internally for engine factor — stripped before response
     }))
