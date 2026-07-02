@@ -64,6 +64,26 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Value My Vessel CTA */}
+      <section className="py-24 px-6" style={{ backgroundColor: '#0c1f3f' }}>
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs tracking-[0.4em] uppercase mb-3" style={{ color: '#c9a84c' }}>Thinking About Selling?</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-5">
+            Find Out What Your Vessel Is Worth
+          </h2>
+          <p className="text-gray-300 mb-10 text-base leading-relaxed">
+            Get an instant AI-powered market valuation based on live comparable listings — then connect with a broker to confirm your number.
+          </p>
+          <Link
+            href="/sell/value-my-vessel"
+            className="inline-block px-10 py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: '#c9a84c' }}
+          >
+            Value My Vessel
+          </Link>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section id="contact" className="py-20 px-6 bg-white">
         <div className="max-w-2xl mx-auto text-center">

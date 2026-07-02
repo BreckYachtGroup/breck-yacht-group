@@ -3,9 +3,28 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Verify Turnstile token with Cloudflare
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      secret: process.env.TURNSTILE_SECRET_KEY,
+      response: token,
+    }),
+  })
+  const data = await res.json()
+  return data.success === true
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, phone, message } = await req.json()
+    const { firstName, lastName, email, phone, message, turnstileToken } = await req.json()
+
+    // Block submission if Turnstile verification fails
+    if (!turnstileToken || !(await verifyTurnstile(turnstileToken))) {
+      return NextResponse.json({ error: 'CAPTCHA verification failed' }, { status: 400 })
+    }
 
     await resend.emails.send({
       from: 'Breck Yacht Group <leads@breckyachtgroup.com>',
