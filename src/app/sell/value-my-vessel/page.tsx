@@ -47,6 +47,9 @@ const BOAT_MAKES = [
   'Viking', 'Hatteras', 'Bertram', 'Cabo', 'Riviera', 'Ocean', 'Luhrs',
   'Tiara', 'Albemarle', 'Blackfin', 'Jarvis Newman', 'Spencer', 'Paul Mann',
   'Rybovich', 'Merritt', 'Winter Custom Yachts',
+  // Luxury Motor Yachts
+  'Princess', 'Sunseeker', 'Azimut', 'Ferretti', 'Pershing', 'Riva',
+  'Benetti', 'Lurssen', 'Sunreef', 'Mangusta', 'Leopard', 'Cranchi',
   // Performance
   'Cigarette', 'Fountain', 'Formula', 'Scarab',
   // Walkarounds / Dual Console
@@ -74,6 +77,12 @@ export default function ValueMyVesselPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const [stage, setStage]     = useState<Stage>('input')
+
+  // Make autocomplete state
+  const [showMakes, setShowMakes] = useState(false)
+  const filteredMakes = BOAT_MAKES.filter(m =>
+    m.toLowerCase().includes(form.make.toLowerCase())
+  )
 
   // Gate state
   const [gate, setGate]           = useState({ firstName: '', lastName: '', email: '', phone: '' })
@@ -206,14 +215,28 @@ export default function ValueMyVesselPage() {
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Make *</label>
-                  <input type="text" value={form.make} onChange={e => set('make', e.target.value)}
-                    placeholder="e.g. Sportsman, Viking" required list="boat-makes-list"
-                    className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded" />
-                  <datalist id="boat-makes-list">
-                    {BOAT_MAKES.map(m => <option key={m} value={m} />)}
-                  </datalist>
+                  <input
+                    type="text" value={form.make} required
+                    placeholder="e.g. Sportsman, Viking"
+                    onChange={e => { set('make', e.target.value); setShowMakes(true) }}
+                    onFocus={() => setShowMakes(true)}
+                    onBlur={() => setTimeout(() => setShowMakes(false), 150)}
+                    className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded"
+                  />
+                  {showMakes && filteredMakes.length > 0 && (
+                    <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                      {filteredMakes.map(m => (
+                        <li key={m}
+                          onMouseDown={() => { set('make', m); setShowMakes(false) }}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+                          style={{ color: '#0c1f3f' }}>
+                          {m}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Model</label>
