@@ -51,15 +51,16 @@ interface ValuationInput {
 }
 
 interface Comp {
-  name:      string
-  year:      number
-  make:      string
-  model:     string
-  length_ft: number
-  hours:     number
-  price:     number
-  location:  string
-  score:     number
+  name:           string
+  year:           number
+  make:           string
+  model:          string
+  length_ft:      number
+  hours:          number
+  price:          number
+  location:       string
+  score:          number
+  raw_engine_qty: number | null  // internal — stripped before API response
 }
 
 // ── Scoring ───────────────────────────────────────────────────────────────────
