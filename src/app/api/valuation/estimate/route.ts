@@ -1,0 +1,251 @@
+/**
+ * /api/valuation/estimate
+ *
+ * Proprietary BYG Boat Valuation Engine — INTERNAL / BACKEND ONLY
+ * Do not link publicly or expose the algorithm.
+ *
+ * Algorithm:
+ *  1. Query MLS proxy for comps matching make, year range, length range
+ *  2. Score each comp by similarity (year, length, hours, model match)
+ *  3. Remove price outliers via IQR method
+ *  4. Derive low / mid / high from weighted percentiles
+ *  5. Apply condition and hours adjustments
+ *  6. Return valuation range + anonymized comp set
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+
+const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
+
+// Condition multipliers applied to median comp price
+const CONDITION_FACTORS: Record<string, number> = {
+  excellent: 1.08,
+  good:      1.00,
+  fair:      0.88,
+  poor:      0.74,
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface ValuationInput {
+  year:      number
+  make:      string
+  model?:    string
+  length_ft: number
+  hours?:    number
+  condition: 'excellent' | 'good' | 'fair' | 'poor'
+  state?:    string
+}
+
+interface Comp {
+  name:      string
+  year:      number
+  make:      string
+  model:     string
+  length_ft: number
+  hours:     number
+  price:     number
+  location:  string
+  score:     number
+}
+
+// ── Scoring ───────────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function scoreComp(comp: any, input: ValuationInput): number {
+  let score = 0
+
+  // Year proximity — max 30 pts
+  const yearDiff = Math.abs((comp.Year ?? 0) - input.year)
+  if      (yearDiff === 0) score += 30
+  else if (yearDiff <= 1)  score += 25
+  else if (yearDiff <= 2)  score += 18
+  else if (yearDiff <= 3)  score += 10
+  else if (yearDiff <= 5)  score += 4
+
+  // Length proximity — max 25 pts
+  const lenDiff = Math.abs((comp.DisplayLengthFeet ?? 0) - input.length_ft)
+  if      (lenDiff === 0)  score += 25
+  else if (lenDiff <= 2)   score += 20
+  else if (lenDiff <= 4)   score += 12
+  else if (lenDiff <= 7)   score += 5
+
+  // Model match — max 25 pts
+  if (input.model) {
+    const iModel = input.model.toLowerCase().replace(/\s+/g, '')
+    const cModel = (comp.Model ?? '').toLowerCase().replace(/\s+/g, '')
+    if      (cModel === iModel)                               score += 25
+    else if (cModel.includes(iModel) || iModel.includes(cModel)) score += 15
+  }
+
+  // Hours proximity — max 20 pts (10 pts neutral if no data)
+  if (input.hours != null && comp.hours != null && comp.hours > 0) {
+    const hDiff = Math.abs(comp.hours - input.hours)
+    if      (hDiff < 50)  score += 20
+    else if (hDiff < 150) score += 14
+    else if (hDiff < 300) score += 8
+    else if (hDiff < 600) score += 3
+  } else {
+    score += 10
+  }
+
+  return score
+}
+
+// ── Statistics ────────────────────────────────────────────────────────────────
+
+function removeOutliers(prices: number[]): number[] {
+  if (prices.length < 4) return prices
+  const s  = [...prices].sort((a, b) => a - b)
+  const q1 = s[Math.floor(s.length * 0.25)]
+  const q3 = s[Math.floor(s.length * 0.75)]
+  const iqr = q3 - q1
+  return prices.filter(p => p >= q1 - 1.5 * iqr && p <= q3 + 1.5 * iqr)
+}
+
+function percentile(sorted: number[], p: number): number {
+  const idx = (p / 100) * (sorted.length - 1)
+  const lo  = Math.floor(idx)
+  const hi  = Math.ceil(idx)
+  return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo)
+}
+
+function round1k(n: number): number {
+  return Math.round(n / 1000) * 1000
+}
+
+// ── Route handler ─────────────────────────────────────────────────────────────
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json() as ValuationInput
+
+    // Validate
+    if (!body.year || !body.make || !body.length_ft || !body.condition) {
+      return NextResponse.json(
+        { error: 'Missing required fields: year, make, length_ft, condition' },
+        { status: 400 }
+      )
+    }
+
+    const input: ValuationInput = {
+      year:      Number(body.year),
+      make:      String(body.make).trim(),
+      model:     body.model ? String(body.model).trim() : undefined,
+      length_ft: Number(body.length_ft),
+      hours:     body.hours != null ? Number(body.hours) : undefined,
+      condition: body.condition,
+      state:     body.state ? String(body.state).trim() : undefined,
+    }
+
+    // ── Fetch comp pool ──────────────────────────────────────────────────────
+    // Fetch 3 pages with make + year/length filters to maximize relevant results
+    const yearBuf = 5
+    const lenBuf  = 8
+    const params = new URLSearchParams({
+      make:      input.make,
+      minYear:   String(input.year - yearBuf),
+      maxYear:   String(input.year + yearBuf),
+      minLength: String(Math.max(10, input.length_ft - lenBuf)),
+      maxLength: String(input.length_ft + lenBuf),
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let raw: any[] = []
+
+    const pages = await Promise.all(
+      [1, 2, 3].map(page =>
+        fetch(`${PROXY_URL}/listings?${params}&page=${page}`, { cache: 'no-store' })
+          .then(r => r.ok ? r.json() : { 'V-Data': [] })
+          .catch(() => ({ 'V-Data': [] }))
+      )
+    )
+    raw = pages.flatMap(p => p['V-Data'] ?? [])
+
+    // Filter: must have a meaningful price
+    raw = raw.filter(v => Number(v.PriceUSD) > 5000)
+
+    // If too few comps, widen search to make-only
+    if (raw.length < 4) {
+      const fallback = await fetch(
+        `${PROXY_URL}/listings?make=${encodeURIComponent(input.make)}&page=1`,
+        { cache: 'no-store' }
+      ).then(r => r.ok ? r.json() : { 'V-Data': [] }).catch(() => ({ 'V-Data': [] }))
+
+      const extra = (fallback['V-Data'] ?? []).filter((v: any) => Number(v.PriceUSD) > 5000)
+      // Merge, deduplicate by ID
+      const seen = new Set(raw.map((v: any) => v.ID))
+      raw.push(...extra.filter((v: any) => !seen.has(v.ID)))
+    }
+
+    if (raw.length === 0) {
+      return NextResponse.json(
+        { error: 'Insufficient market data for this vessel type. Contact us for a manual valuation.' },
+        { status: 422 }
+      )
+    }
+
+    // ── Score, rank, trim ────────────────────────────────────────────────────
+    const scored: Comp[] = raw.map(v => ({
+      name:      v.VesselName || [v.Year, v.Manufacturer, v.Model].filter(Boolean).join(' '),
+      year:      v.Year ?? 0,
+      make:      v.Manufacturer ?? '',
+      model:     v.Model ?? '',
+      length_ft: v.DisplayLengthFeet ?? 0,
+      hours:     v.hours ?? 0,
+      price:     Number(v.PriceUSD),
+      location:  [v.City, v.State].filter(Boolean).join(', '),
+      score:     scoreComp(v, input),
+    }))
+
+    scored.sort((a, b) => b.score - a.score)
+    const topComps = scored.slice(0, 20)
+
+    // ── Price statistics ─────────────────────────────────────────────────────
+    let prices = removeOutliers(topComps.map(c => c.price))
+    const sorted = [...prices].sort((a, b) => a - b)
+
+    const rawLow  = percentile(sorted, 20)
+    const rawMid  = percentile(sorted, 50)
+    const rawHigh = percentile(sorted, 80)
+
+    // Condition adjustment
+    const condFactor = CONDITION_FACTORS[input.condition] ?? 1.0
+
+    // Hours adjustment: ±10% max, based on deviation from expected hours
+    let hoursFactor = 1.0
+    if (input.hours != null) {
+      const boatAge       = new Date().getFullYear() - input.year
+      const expectedHours = Math.max(boatAge * 150, 50)
+      const delta         = input.hours - expectedHours
+      hoursFactor = Math.max(0.90, Math.min(1.10, 1 - (delta / expectedHours) * 0.10))
+    }
+
+    const adjFactor = condFactor * hoursFactor
+    const low  = round1k(rawLow  * adjFactor)
+    const mid  = round1k(rawMid  * adjFactor)
+    const high = round1k(rawHigh * adjFactor)
+
+    // Confidence
+    const avgScore = topComps.reduce((s, c) => s + c.score, 0) / topComps.length
+    const confidence =
+      topComps.length >= 8 && avgScore >= 45 ? 'high'
+      : topComps.length >= 4 && avgScore >= 25 ? 'medium'
+      : 'low'
+
+    return NextResponse.json({
+      low,
+      mid,
+      high,
+      confidence,
+      comp_count:  topComps.length,
+      // Return top 6 comps anonymized — no listing IDs exposed
+      comps: topComps.slice(0, 6).map(({ score: _s, ...c }) => c),
+      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Adjusted for ${input.condition} condition${input.hours != null ? ' and engine hours' : ''}.`,
+    })
+
+  } catch (err) {
+    console.error('[valuation/estimate]', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

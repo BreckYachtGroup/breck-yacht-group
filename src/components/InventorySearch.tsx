@@ -369,7 +369,7 @@ export default function InventorySearch() {
                   </div>
                   <div className="p-6">
                     <p className="text-xs tracking-widest uppercase mb-1" style={{ color: '#c9a84c' }}>
-                      {vessel.year} {vessel.make} · {vessel.length_ft}ft
+                      {vessel.year} {vessel.make} {vessel.model} · {vessel.length_ft}ft
                     </p>
                     <h2 className="text-xl font-bold mb-1" style={{ color: '#0c1f3f' }}>{vessel.name}</h2>
                     <p className="text-gray-400 text-sm mb-4">{vessel.location}</p>
