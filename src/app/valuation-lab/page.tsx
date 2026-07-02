@@ -320,9 +320,9 @@ export default function ValuationLab() {
                     <span className="font-semibold" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.totalResidual.toLocaleString()}</span>
                     <span className="text-gray-500">Comp baseline ({result.engine_breakdown.baselineDesc})</span>
                     <span className="font-medium" style={{ color: '#0c1f3f' }}>${result.engine_breakdown.baselineValue.toLocaleString()}</span>
-                    <span className="text-gray-500">Engine adjustment to valuation</span>
+                    <span className="text-gray-500">Engine premium vs. baseline <span className="text-gray-300">(context only)</span></span>
                     <span className={`font-semibold ${result.engine_breakdown.delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                      {result.engine_breakdown.delta >= 0 ? '+' : ''}${result.engine_breakdown.delta.toLocaleString()}
+                      {result.engine_breakdown.delta >= 0 ? '+' : ''}${result.engine_breakdown.delta.toLocaleString()} <span className="text-xs font-normal text-gray-400">not added to range</span>
                     </span>
                   </div>
                 </div>

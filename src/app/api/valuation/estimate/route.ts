@@ -245,23 +245,11 @@ export async function POST(req: NextRequest) {
       hoursFactor = Math.max(0.90, Math.min(1.10, 1 - (delta / expectedHours) * 0.10))
     }
 
-    // Engine count adjustment — normalize comp pool (mostly twins) to user's config
-    // We calculate what fraction of comps match engine count, then apply factor
-    let engineFactor = 1.0
-    if (input.engine_count != null) {
-      const userFactor  = ENGINE_COUNT_FACTORS[input.engine_count] ?? 1.0
-      // Estimate avg engine count of comp pool (default twin = 1.0 baseline)
-      const compEngineAvg = topComps.reduce((sum, c) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const qty = (c as any).raw_engine_qty
-        return sum + (ENGINE_COUNT_FACTORS[qty] ?? 1.0)
-      }, 0) / topComps.length
-      engineFactor = userFactor / (compEngineAvg || 1.0)
-      // Cap adjustment at ±40% to avoid wild swings
-      engineFactor = Math.max(0.60, Math.min(1.40, engineFactor))
-    }
+    // Engine count is used in SCORING (15pts) to weight matching comps higher,
+    // not as a multiplier on price — the comp prices already reflect their engine packages.
+    // ENGINE_COUNT_FACTORS is kept for reference but not applied to avoid double-counting.
 
-    const adjFactor = condFactor * hoursFactor * engineFactor
+    const adjFactor = condFactor * hoursFactor
     let compLow  = round1k(rawLow  * adjFactor)
     let compMid  = round1k(rawMid  * adjFactor)
     let compHigh = round1k(rawHigh * adjFactor)
@@ -284,11 +272,10 @@ export async function POST(req: NextRequest) {
         hours:      input.hours,
       })
       const baseline = getBaselineEngineValue(input.length_ft, input.year)
-      const delta    = Math.round((userEngines.totalResidual - baseline.totalResidual) * 0.65 / 1000) * 1000
-
-      compLow  += delta
-      compMid  += delta
-      compHigh += delta
+      // Delta is calculated but NOT applied to comp prices —
+      // comps already reflect the engine packages on those boats.
+      // We show it as context only so the seller understands their engine package's value.
+      const delta = Math.round((userEngines.totalResidual - baseline.totalResidual) * 0.65 / 1000) * 1000
 
       engineBreakdown = {
         label:         userEngines.label,
