@@ -18,6 +18,34 @@ import { calcEngineResidualValue, getBaselineEngineValue } from '@/lib/engineVal
 
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// In-memory per-IP store. Works for single-instance deployments (Vercel serverless
+// functions are single-instance per region). Upgrade to Upstash Redis if you ever
+// run multiple concurrent instances and need shared state across them.
+const RATE_LIMIT_WINDOW_MS = 60_000  // 1-minute rolling window
+const RATE_LIMIT_MAX       = 5       // max requests per IP per window
+
+const rateLimitStore = new Map<string, { count: number; windowStart: number }>()
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterSecs: number } {
+  const now   = Date.now()
+  const entry = rateLimitStore.get(ip)
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    // New window — reset counter
+    rateLimitStore.set(ip, { count: 1, windowStart: now })
+    return { allowed: true, retryAfterSecs: 0 }
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    const retryAfterSecs = Math.ceil((entry.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000)
+    return { allowed: false, retryAfterSecs }
+  }
+
+  entry.count++
+  return { allowed: true, retryAfterSecs: 0 }
+}
+
 // List-to-sale discount: comp data is asking prices, not closed transactions.
 // Marine market data shows center consoles / sportfish close 8–10% below asking on average.
 // Applying 9% discount to all comp prices before percentile calculation.
@@ -146,6 +174,23 @@ function round1k(n: number): number {
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Rate limit check ───────────────────────────────────────────────────────
+    // x-forwarded-for is set by Cloudflare/Vercel; fall back to x-real-ip or 'unknown'
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+            ?? req.headers.get('x-real-ip')
+            ?? 'unknown'
+
+    const { allowed, retryAfterSecs } = checkRateLimit(ip)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before trying again.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSecs) },
+        }
+      )
+    }
+
     const body = await req.json() as ValuationInput
 
     // Validate
