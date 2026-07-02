@@ -231,13 +231,16 @@ export async function POST(req: NextRequest) {
 
     scored.sort((a, b) => b.score - a.score)
 
+    // Hard length cap — enforced on every comp regardless of score or fallback.
+    // A 76ft Viking is never a valid comp for a 42ft Viking. Max ±5ft absolute.
+    const MAX_LEN_DIFF = 5
+    const lengthCapped = scored.filter(c => Math.abs(c.length_ft - input.length_ft) <= MAX_LEN_DIFF)
+
     // Minimum score filter: exclude weak matches that barely resemble the subject vessel.
-    // A comp scoring below 30 fails to match on most key dimensions and would
-    // distort the price distribution — especially the conservative end.
     const MIN_SCORE = 40
-    const qualifiedComps = scored.filter(c => c.score >= MIN_SCORE)
-    // Fall back to top 8 if filter is too aggressive
-    const topComps = qualifiedComps.length >= 4 ? qualifiedComps.slice(0, 20) : scored.slice(0, 8)
+    const qualifiedComps = lengthCapped.filter(c => c.score >= MIN_SCORE)
+    // Fall back to top 8 within length cap if score filter leaves too few
+    const topComps = qualifiedComps.length >= 4 ? qualifiedComps.slice(0, 20) : lengthCapped.slice(0, 8)
 
     // ── Price statistics ─────────────────────────────────────────────────────
     // Apply list-to-sale discount before percentile calc — comps are asking prices, not sold prices
