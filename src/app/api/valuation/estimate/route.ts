@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
     // Minimum score filter: exclude weak matches that barely resemble the subject vessel.
     // A comp scoring below 30 fails to match on most key dimensions and would
     // distort the price distribution — especially the conservative end.
-    const MIN_SCORE = 30
+    const MIN_SCORE = 40
     const qualifiedComps = scored.filter(c => c.score >= MIN_SCORE)
     // Fall back to top 8 if filter is too aggressive
     const topComps = qualifiedComps.length >= 4 ? qualifiedComps.slice(0, 20) : scored.slice(0, 8)
@@ -259,9 +259,12 @@ export async function POST(req: NextRequest) {
     // ENGINE_COUNT_FACTORS is kept for reference but not applied to avoid double-counting.
 
     const adjFactor = condFactor * hoursFactor
-    let compLow  = round1k(rawLow  * adjFactor)
     let compMid  = round1k(rawMid  * adjFactor)
     let compHigh = round1k(rawHigh * adjFactor)
+    // Floor: conservative can't be more than 28% below mid.
+    // Prevents cheap outlier comps (e.g. older/smaller boats that barely pass scoring)
+    // from producing an unrealistically low floor for the seller.
+    let compLow  = Math.max(round1k(rawLow * adjFactor), round1k(compMid * 0.72))
 
     // ── Engine residual value adjustment ─────────────────────────────────────
     // Calculate user's actual engine package value vs baseline assumed in comps.
