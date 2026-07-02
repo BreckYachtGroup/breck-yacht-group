@@ -139,8 +139,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Fetch comp pool ──────────────────────────────────────────────────────
-    // Fetch 3 pages with make + year/length filters to maximize relevant results
-    const yearBuf = 5
+    // ±3 years keeps comps recent and avoids older, lower-priced boats skewing results
+    const yearBuf = 3
     const lenBuf  = 8
     const params = new URLSearchParams({
       make:      input.make,
@@ -205,9 +205,9 @@ export async function POST(req: NextRequest) {
     let prices = removeOutliers(topComps.map(c => c.price))
     const sorted = [...prices].sort((a, b) => a - b)
 
-    const rawLow  = percentile(sorted, 20)
+    const rawLow  = percentile(sorted, 25)
     const rawMid  = percentile(sorted, 50)
-    const rawHigh = percentile(sorted, 80)
+    const rawHigh = percentile(sorted, 75)
 
     // Condition adjustment
     const condFactor = CONDITION_FACTORS[input.condition] ?? 1.0
@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
       comp_count:  topComps.length,
       // Return top 6 comps anonymized — no listing IDs exposed
       comps: topComps.slice(0, 6).map(({ score: _s, ...c }) => c),
-      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft. Adjusted for ${input.condition} condition${input.hours != null ? ' and engine hours' : ''}.`,
+      methodology: `Valuation based on ${topComps.length} comparable ${input.make} listings within ±${yearBuf} model years and ±${lenBuf}ft of your vessel's length. Adjusted for ${input.condition} condition${input.hours != null ? ' and engine hours' : ''}.`,
     })
 
   } catch (err) {
