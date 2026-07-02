@@ -37,6 +37,22 @@ type Stage = 'input' | 'teaser' | 'unlocked'
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: CURRENT_YEAR - 1979 }, (_, i) => CURRENT_YEAR - i)
 
+const BOAT_MAKES = [
+  // Center Consoles
+  'Sportsman', 'Invincible', 'Yellowfin', 'Freeman', 'Contender', 'Regulator',
+  'Grady-White', 'Boston Whaler', 'Pursuit', 'Everglades', 'Hydra-Sports',
+  'Scout', 'Cobia', 'Robalo', 'Sea Fox', 'Mako', 'Sailfish', 'Release',
+  'World Cat', 'Midnight Express', 'Statement Marine', 'Nor-Tech',
+  // Sportfish / Convertibles
+  'Viking', 'Hatteras', 'Bertram', 'Cabo', 'Riviera', 'Ocean', 'Luhrs',
+  'Tiara', 'Albemarle', 'Blackfin', 'Jarvis Newman', 'Spencer', 'Paul Mann',
+  'Rybovich', 'Merritt', 'Winter Custom Yachts',
+  // Performance
+  'Cigarette', 'Fountain', 'Formula', 'Scarab',
+  // Walkarounds / Dual Console
+  'Edgewater', 'Pathfinder', 'Ranger', 'Skeeter', 'Tidewater',
+].sort()
+
 const CONFIDENCE_COLOR = { high: 'text-green-600', medium: 'text-yellow-600', low: 'text-red-500' }
 
 // Compact price formatter: $455,000 → $455K, $1,200,000 → $1.2M
@@ -193,8 +209,11 @@ export default function ValueMyVesselPage() {
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Make *</label>
                   <input type="text" value={form.make} onChange={e => set('make', e.target.value)}
-                    placeholder="e.g. Sportsman, Viking" required
+                    placeholder="e.g. Sportsman, Viking" required list="boat-makes-list"
                     className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded" />
+                  <datalist id="boat-makes-list">
+                    {BOAT_MAKES.map(m => <option key={m} value={m} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Model</label>
