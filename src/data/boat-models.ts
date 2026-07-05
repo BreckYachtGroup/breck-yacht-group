@@ -7,12 +7,15 @@
 export const BOAT_MODELS: Record<string, string[]> = {
   // ── Center Console / Inshore ───────────────────────────────────────────────
   'Sportsman': [
-    '17 Island Bay', '19 Island Bay', '192 Open', '194 Open',
-    '202 Open', '204 Open', '212 Open', '214 Open',
-    '224 Open', '232 Open', '234 Open', '244 Open',
+    '17 Island Bay', '19 Island Bay', '20 Island Bay',
+    '192 Open', '194 Open', '202 Open', '204 Open',
+    '212 Open', '214 Open', '224 Open', '232 Open', '234 Open', '244 Open',
     '247 Center Console', '252 Open', '257 Center Console',
     '262 Open', '267 Center Console', '282 Center Console',
     '287 Center Console', '292 Open', '302 Open', '312 Open',
+    '322 Open', '332 Open', '342 Open', '352 Open',
+    'Heritage 211 CC', 'Heritage 231 CC', 'Heritage 251 CC', 'Heritage 271 CC',
+    'Masters 207 Bay', 'Masters 227 Bay',
   ],
   'Boston Whaler': [
     '110 Montauk', '130 Super Sport', '150 Super Sport',
