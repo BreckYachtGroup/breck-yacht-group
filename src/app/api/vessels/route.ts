@@ -4,13 +4,39 @@
  * Accepts filter params and passes them to the Vultr proxy,
  * which forwards them to YachtBroker.org for server-side filtering.
  * This means searches work across ALL 8,000+ listings, not just loaded ones.
+ *
+ * Rate limiting: middleware.ts handles the primary per-IP limit.
+ * This route adds a secondary hard cap as a belt-and-suspenders measure.
  */
 
+import { NextRequest } from 'next/server'
 import { normalizeYachtBrokerListing, type Listing } from '@/lib/listings'
 
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
-export async function GET(request: Request) {
+// Secondary rate limit — stricter than the global middleware limit.
+// Inventory pagination is expensive; cap at 30 requests/min per IP.
+const RL_WINDOW_MS  = 60_000
+const RL_MAX        = 30
+const rlStore       = new Map<string, { count: number; windowStart: number }>()
+
+function checkRL(ip: string): boolean {
+  const now   = Date.now()
+  const entry = rlStore.get(ip)
+  if (!entry || now - entry.windowStart > RL_WINDOW_MS) {
+    rlStore.set(ip, { count: 1, windowStart: now })
+    return true
+  }
+  if (entry.count >= RL_MAX) return false
+  entry.count++
+  return true
+}
+
+export async function GET(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  if (!checkRL(ip)) {
+    return Response.json({ error: 'Too many requests', listings: [], total: 0, lastPage: 1, currentPage: 1 }, { status: 429 })
+  }
   const { searchParams } = new URL(request.url)
 
   // Build proxy query string with all supported filter params
