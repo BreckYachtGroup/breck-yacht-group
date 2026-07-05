@@ -66,6 +66,7 @@ const ENGINE_COUNT_FACTORS: Record<number, number> = {
   2: 1.00,   // twin — market baseline for most center consoles
   3: 1.22,   // triple — premium over twin
   4: 1.40,   // quad — significant premium
+  5: 1.56,   // quint — diminishing returns above quad
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────

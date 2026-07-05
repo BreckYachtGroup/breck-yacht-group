@@ -215,6 +215,7 @@ export default function ValuationLab() {
                   <option value="2">2 — Twin</option>
                   <option value="3">3 — Triple</option>
                   <option value="4">4 — Quad</option>
+                  <option value="5">5 — Quint</option>
                 </select>
               </div>
 

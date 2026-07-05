@@ -768,6 +768,7 @@ export default function ValueMyVesselPage() {
                     <option value="2">Twin</option>
                     <option value="3">Triple</option>
                     <option value="4">Quad</option>
+                    <option value="5">Quint</option>
                   </select>
                 </div>
                 <div>
