@@ -41,7 +41,7 @@ const YEARS = Array.from({ length: CURRENT_YEAR - 1979 }, (_, i) => CURRENT_YEAR
 const BOAT_MAKES = [
   // ── A ─────────────────────────────────────────────────────────────────────
   '2 Bar', '3B Craft', '3D Tender',
-  'A&M Manufacturing', 'A-Yachts', 'Aage Nielsen', 'AB', 'AB Inflatables', 'AB Yachts',
+  'A&M Manufacturing', 'A-Yachts', 'Aage Nielsen', 'AB Inflatables', 'AB Yachts',
   'Abaco', 'Abaco Skiff', 'Abacus', 'Abati Yachts', 'Abbott', 'ABD',
   'Abeking & Rasmussen', 'Abim', 'Able', 'Absolute', 'ACB', 'Accelera', 'Achilles', 'ACM',
   'Acroplast', 'Action Craft', 'Activator', 'Active Thunder', 'Ad Astra', 'Ada Yacht',
@@ -55,7 +55,7 @@ const BOAT_MAKES = [
   'Albury Brothers', 'Alcan', 'AlCustom', 'Alden', 'Alen', 'Alena', 'Alera', 'Alerion',
   'Aleutian', 'Alfa', 'Alfamarine', 'Alfastreet', 'Alia Yachts', 'Alibi',
   'ALK2 Powerboats', 'Allegra', 'Allegro Yacht', 'Alliage', 'Alliaura', 'Allied',
-  'Allison', 'Allison Boats', 'Allmand', 'Alloy Yachts', 'AllSea', 'Allseas',
+  'Allison Boats', 'Allmand', 'Alloy Yachts', 'AllSea', 'Allseas',
   'Allure', 'Allures', 'Alm', 'Almar', 'Almarine', 'Aloha', 'Alpa', 'Alpha',
   'Alsberg Brothers', 'Altair', 'Altamar', 'Altamarea', 'Altena', 'Altima', 'Altura',
   'Alu Marine', 'Alubat', 'Alukin', 'Alumacraft', 'Alumarine', 'Alumaweld',
