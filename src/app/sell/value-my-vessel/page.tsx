@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import ValuationForm from '@/components/ValuationForm'
+import { BOAT_MODELS } from '@/data/boat-models'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
@@ -551,6 +552,13 @@ export default function ValueMyVesselPage() {
     m.toLowerCase().includes(form.make.toLowerCase())
   )
 
+  // Model autocomplete state — driven by selected make
+  const [showModels, setShowModels] = useState(false)
+  const makeModels: string[] = BOAT_MODELS[form.make] ?? []
+  const filteredModels = makeModels.filter(m =>
+    m.toLowerCase().includes(form.model.toLowerCase())
+  )
+
   // Gate state
   const [gate, setGate]           = useState({ firstName: '', lastName: '', email: '', phone: '' })
   const [gateLoading, setGateLoading] = useState(false)
@@ -696,7 +704,7 @@ export default function ValueMyVesselPage() {
                     <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto mt-1">
                       {filteredMakes.map(m => (
                         <li key={m}
-                          onMouseDown={() => { set('make', m); setShowMakes(false) }}
+                          onMouseDown={() => { set('make', m); set('model', ''); setShowMakes(false) }}
                           className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
                           style={{ color: '#0c1f3f' }}>
                           {m}
@@ -705,11 +713,29 @@ export default function ValueMyVesselPage() {
                     </ul>
                   )}
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Model</label>
-                  <input type="text" value={form.model} onChange={e => set('model', e.target.value)}
-                    placeholder="e.g. 352 Open, 48 Convertible"
-                    className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded" />
+                  <input
+                    type="text"
+                    value={form.model}
+                    placeholder={makeModels.length > 0 ? `${makeModels.length} models available…` : 'e.g. 352 Open, 48 Convertible'}
+                    onChange={e => { set('model', e.target.value); setShowModels(true) }}
+                    onFocus={() => setShowModels(true)}
+                    onBlur={() => setTimeout(() => setShowModels(false), 150)}
+                    className="w-full px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 rounded"
+                  />
+                  {showModels && (filteredModels.length > 0) && (
+                    <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                      {filteredModels.map(m => (
+                        <li key={m}
+                          onMouseDown={() => { set('model', m); setShowModels(false) }}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+                          style={{ color: '#0c1f3f' }}>
+                          {m}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Length (ft) *</label>
