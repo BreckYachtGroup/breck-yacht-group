@@ -227,24 +227,6 @@ export default function InventorySearch() {
   const FilterPanel = () => (
     <div className="space-y-5">
 
-      {/* For Sale / Sold tab — mirrors the reference */}
-      <div className="flex rounded overflow-hidden border border-gray-200 text-xs mb-1">
-        <button
-          onClick={() => setShowOwn(true)}
-          className="flex-1 py-2.5 font-semibold uppercase tracking-wider transition-colors"
-          style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
-        >
-          BYG Listings
-        </button>
-        <button
-          onClick={() => setShowOwn(false)}
-          className="flex-1 py-2.5 font-semibold uppercase tracking-wider transition-colors"
-          style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
-        >
-          All Inventory
-        </button>
-      </div>
-
       {/* ── My Saved Searches ─────────────────────────────────────────────── */}
       <div>
         <p className={labelCls} style={{ color: '#0c1f3f' }}>My Saved Searches</p>
@@ -451,11 +433,27 @@ export default function InventorySearch() {
           </div>
         )}
 
-        {/* Results count */}
+        {/* Results count + BYG / All toggle */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-400">
             {loading ? 'Searching…' : `${total.toLocaleString()} vessels found`}
           </p>
+          <div className="flex rounded overflow-hidden border border-gray-200 text-xs">
+            <button
+              onClick={() => setShowOwn(true)}
+              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
+              style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
+            >
+              BYG Listings
+            </button>
+            <button
+              onClick={() => setShowOwn(false)}
+              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
+              style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
+            >
+              All Inventory
+            </button>
+          </div>
         </div>
 
         {/* Loading skeleton */}
