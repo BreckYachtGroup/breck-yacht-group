@@ -78,7 +78,7 @@ export default function Nav() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#0c1f3f' }} className="fixed top-0 left-0 right-0 z-50 px-6 py-5">
+    <nav style={{ backgroundColor: '#0c1f3f' }} className="fixed top-0 left-0 right-0 z-50 px-6 py-5" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" onClick={() => { closeAll(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-white text-lg font-bold tracking-widest uppercase">
@@ -212,9 +212,12 @@ export default function Nav() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — full-screen overlay */}
       {mobileOpen && (
-        <div className="md:hidden mt-4 pb-4 flex flex-col" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div
+          className="md:hidden fixed inset-0 z-40 flex flex-col overflow-y-auto"
+          style={{ backgroundColor: '#0c1f3f', paddingTop: '80px' }}
+        >
           <Link href="/" onClick={() => { closeAll(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             Home
           </Link>
