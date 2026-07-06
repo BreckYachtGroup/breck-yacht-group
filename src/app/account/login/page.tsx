@@ -18,12 +18,33 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError) {
       setError('Invalid email or password.')
       setLoading(false)
       return
+    }
+
+    // Ensure buyer_profiles row exists (may have been skipped if email confirmation was required at signup)
+    const token    = data.session?.access_token
+    const fullName = data.user?.user_metadata?.full_name as string | undefined
+    if (token && fullName) {
+      fetch('/api/account/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(async r => {
+        if (r.ok) {
+          const d = await r.json()
+          // Profile missing — create it now using name from auth metadata
+          if (!d.profile) {
+            fetch('/api/account/profile', {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body:    JSON.stringify({ name: fullName }),
+            }).catch(() => {})
+          }
+        }
+      }).catch(() => {})
     }
 
     router.push('/inventory')

@@ -11,9 +11,15 @@ export default function Nav() {
   const router = useRouter()
   const [profileName, setProfileName] = useState('')
 
-  // Fetch buyer profile name when user logs in
+  // Get name from auth metadata (set at signup), fallback to profile API
   useEffect(() => {
     if (!user) { setProfileName(''); return }
+
+    // user_metadata.full_name is stored at signup time — fastest path
+    const metaName = user.user_metadata?.full_name as string | undefined
+    if (metaName) { setProfileName(metaName); return }
+
+    // Fallback: fetch from buyer_profiles table
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
       fetch('/api/account/profile', {
