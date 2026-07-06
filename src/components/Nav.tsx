@@ -173,14 +173,15 @@ export default function Nav() {
           {!loading && (
             user ? (
               <div className="flex items-center gap-3">
-                {/* User avatar circle */}
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                {/* User avatar — links to account profile */}
+                <Link
+                  href="/account/profile"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}
-                  title={user.email ?? ''}
+                  title="My Account"
                 >
                   {userInitial}
-                </div>
+                </Link>
                 <button
                   onClick={handleSignOut}
                   className="text-white/60 hover:text-white text-xs tracking-wider uppercase transition-colors"
