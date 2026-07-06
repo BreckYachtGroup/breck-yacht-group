@@ -50,27 +50,39 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>5. Data Security</h2>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>5. Buyer Accounts</h2>
+          <p>If you create a buyer account on our Site, we collect and store the following additional information:</p>
+          <ul className="mt-3 space-y-2 list-disc pl-5">
+            <li><strong>Account credentials:</strong> Email address and encrypted password.</li>
+            <li><strong>Buyer profile:</strong> Full name, phone number, vessel preferences, and purchase timeline you provide at registration.</li>
+            <li><strong>Saved searches:</strong> Search filters you save while browsing our inventory.</li>
+          </ul>
+          <p className="mt-3">This information is used solely to match you with relevant vessel listings and to enable our brokers to contact you personally when matching inventory becomes available. You may delete your account and all associated data at any time from your <a href="/account/profile" style={{ color: '#c9a84c' }} className="underline">account settings page</a>.</p>
+          <p className="mt-3">Account data is stored on Supabase infrastructure hosted in the United States (AWS us-east-2, Ohio) and is protected by row-level security policies that prevent unauthorized access.</p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>6. Data Security</h2>
           <p>We take reasonable measures to protect your personal information from unauthorized access, disclosure, or misuse. Our Site is served over HTTPS and contact form data is transmitted securely. However, no method of electronic transmission is 100% secure, and we cannot guarantee absolute security.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>6. Your Rights</h2>
-          <p>You may contact us at any time to request access to, correction of, or deletion of personal information we hold about you. We will respond to reasonable requests within a timely manner.</p>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>7. Your Rights</h2>
+          <p>You may contact us at any time to request access to, correction of, or deletion of personal information we hold about you. Buyer account holders may delete their account and all associated data instantly from their <a href="/account/profile" style={{ color: '#c9a84c' }} className="underline">account settings page</a>. We will respond to all other reasonable requests within a timely manner.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>7. Children's Privacy</h2>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>8. Children's Privacy</h2>
           <p>Our Site is not directed to individuals under the age of 18. We do not knowingly collect personal information from minors.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>8. Changes to This Policy</h2>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>9. Changes to This Policy</h2>
           <p>We reserve the right to update this Privacy Policy at any time. Changes will be posted on this page with an updated effective date. Continued use of the Site after changes constitutes acceptance of the updated policy.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>9. Contact Us</h2>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#0c1f3f' }}>10. Contact Us</h2>
           <p>If you have questions about this Privacy Policy, please contact us:</p>
           <div className="mt-3">
             <p><strong>Breck Yacht Group LLC</strong></p>
