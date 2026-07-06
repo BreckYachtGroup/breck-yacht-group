@@ -402,25 +402,19 @@ export default function InventorySearch() {
 
       {/* ── Length ────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelCls} style={{ color: '#0c1f3f' }}>Length</label>
-        <div className="flex gap-2 items-center">
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Length <span className="text-gray-400 normal-case font-normal">(ft)</span></label>
+        <div className="flex gap-2">
           {minMaxInput('No Min', f.minLength, v => set('minLength', v))}
           {minMaxInput('No Max', f.maxLength, v => set('maxLength', v))}
-          <div className="shrink-0 flex items-center gap-1 px-2.5 py-2 border border-gray-200 rounded bg-white text-sm text-gray-500">
-            ft <ChevronIcon />
-          </div>
         </div>
       </div>
 
       {/* ── Price ─────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelCls} style={{ color: '#0c1f3f' }}>Price</label>
-        <div className="flex gap-2 items-center">
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Price <span className="text-gray-400 normal-case font-normal">(USD)</span></label>
+        <div className="flex gap-2">
           {minMaxInput('No Min', f.minPrice, v => set('minPrice', v))}
           {minMaxInput('No Max', f.maxPrice, v => set('maxPrice', v))}
-          <div className="shrink-0 flex items-center gap-1 px-2.5 py-2 border border-gray-200 rounded bg-white text-sm text-gray-500">
-            USD <ChevronIcon />
-          </div>
         </div>
       </div>
 
