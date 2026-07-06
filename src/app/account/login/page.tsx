@@ -63,7 +63,7 @@ export default function LoginPage() {
     <div style={{ backgroundColor: '#f8f6f1' }} className="min-h-screen">
 
       <div style={{ backgroundColor: '#0c1f3f' }} className="py-20 text-center text-white">
-        <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Buyer Portal</p>
+        <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Client Portal</p>
         <h1 className="text-4xl font-bold">Sign In</h1>
       </div>
 

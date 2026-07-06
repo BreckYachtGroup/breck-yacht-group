@@ -80,7 +80,7 @@ export default function SignUpPage() {
 
       {/* Header */}
       <div style={{ backgroundColor: '#0c1f3f' }} className="py-20 text-center text-white">
-        <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Buyer Portal</p>
+        <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Client Portal</p>
         <h1 className="text-4xl font-bold">Create Your Account</h1>
         <p className="text-white/60 mt-3 text-sm">
           Save searches and get notified personally when matching vessels become available.
