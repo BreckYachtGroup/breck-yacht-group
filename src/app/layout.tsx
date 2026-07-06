@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Nav from '@/components/Nav'
+import Providers from '@/components/Providers'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -31,11 +32,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Nav />
+        <Providers>
+          <Nav />
 
-        <main className="min-h-screen pt-16">
-          {children}
-        </main>
+          <main className="min-h-screen pt-16">
+            {children}
+          </main>
 
         <footer style={{ backgroundColor: '#0c1f3f' }} className="text-white/50 text-center py-8 text-sm tracking-widest uppercase">
           <div className="flex justify-center gap-6 mb-4">
@@ -57,8 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
           </p>
         </footer>
-        <Analytics />
-        <SpeedInsights />
+          <Analytics />
+          <SpeedInsights />
+        </Providers>
       </body>
     </html>
   )

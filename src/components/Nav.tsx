@@ -2,8 +2,13 @@
 
 import Link from 'next/link'
 import { useState, useRef } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function Nav() {
+  const { user, loading, signOut } = useAuth()
+  const router = useRouter()
+
   const [aboutOpen, setAboutOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
   const [sellOpen, setSellOpen] = useState(false)
@@ -11,6 +16,14 @@ export default function Nav() {
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false)
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false)
   const [mobileSellOpen, setMobileSellOpen] = useState(false)
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
+
+  // First letter of user's email for the avatar circle
+  const userInitial = user?.email?.[0]?.toUpperCase() ?? ''
 
   // Timers to delay closing so mouse can travel from button into dropdown
   const aboutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -131,6 +144,35 @@ export default function Nav() {
           <Link href="/#contact" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
             Contact
           </Link>
+
+          {/* ── Auth ──────────────────────────────────────────────────────── */}
+          {!loading && (
+            user ? (
+              <div className="flex items-center gap-3">
+                {/* User avatar circle */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                  style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}
+                  title={user.email ?? ''}
+                >
+                  {userInitial}
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="text-white/60 hover:text-white text-xs tracking-wider uppercase transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/account/login"
+                className="text-xs tracking-wider uppercase px-4 py-2 border border-white/30 text-white/80 hover:text-white hover:border-white transition-colors"
+              >
+                Sign In
+              </Link>
+            )
+          )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -213,9 +255,35 @@ export default function Nav() {
             )}
           </div>
 
-          <Link href="/#contact" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors">
+          <Link href="/#contact" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             Contact
           </Link>
+
+          {/* Mobile auth */}
+          {!loading && (
+            user ? (
+              <div className="flex items-center justify-between px-2 py-4">
+                <span className="text-sm text-white/60 tracking-wider">
+                  {user.email}
+                </span>
+                <button
+                  onClick={() => { closeAll(); handleSignOut() }}
+                  className="text-xs tracking-wider uppercase text-white/60 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/account/login"
+                onClick={closeAll}
+                className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors"
+                style={{ color: '#c9a84c' }}
+              >
+                Sign In / Create Account
+              </Link>
+            )
+          )}
         </div>
       )}
     </nav>

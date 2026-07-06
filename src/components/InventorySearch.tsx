@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { type Listing } from '@/lib/listings'
+import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -16,7 +18,8 @@ type Filters = {
   region:    string; country:   string; state:     string; city: string
 }
 
-type SavedSearch = { name: string; filters: Filters; showOwn: boolean }
+// id is present for DB-backed searches; absent for localStorage-only searches
+type SavedSearch = { id?: string; name: string; filters: Filters; showOwn: boolean }
 
 const EMPTY_FILTERS: Filters = {
   keyword: '', make: '', model: '', condition: '', boatType: '', fuelType: '',
@@ -81,6 +84,7 @@ function SearchSelect({ placeholder, value, onChange, children }: {
 export default function InventorySearch() {
   const searchParams = useSearchParams()
   const router       = useRouter()
+  const { user }     = useAuth()
 
   // Vessel results
   const [vessels,     setVessels]     = useState<Listing[]>([])
@@ -130,25 +134,78 @@ export default function InventorySearch() {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [saveNameInput, setSaveNameInput] = useState('')
+  const [savingSearch,  setSavingSearch]  = useState(false)
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('byg_saved_searches')
-      if (raw) setSavedSearches(JSON.parse(raw))
-    } catch {}
-  }, [])
-
-  const persistSaved = (list: SavedSearch[]) => {
-    setSavedSearches(list)
-    try { localStorage.setItem('byg_saved_searches', JSON.stringify(list)) } catch {}
+  // Helper: get current session token (server routes need Bearer token)
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token ?? null
   }
 
-  const handleSaveSearch = () => {
+  // Load saved searches — from DB if authenticated, localStorage if guest
+  useEffect(() => {
+    if (user) {
+      // Authenticated: load from DB
+      getToken().then(token => {
+        if (!token) return
+        fetch('/api/saved-searches', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then(r => r.json())
+          .then(d => {
+            if (d.searches) {
+              setSavedSearches(d.searches.map((s: { id: string; name: string; filters: Record<string, unknown> }) => {
+                // filters jsonb stores { ...Filters, showOwn? }
+                const { showOwn: so, ...filters } = s.filters as Record<string, unknown>
+                return {
+                  id:      s.id,
+                  name:    s.name,
+                  filters: filters as Filters,
+                  showOwn: Boolean(so),
+                }
+              }))
+            }
+          })
+          .catch(() => {})
+      })
+    } else {
+      // Guest: load from localStorage
+      try {
+        const raw = localStorage.getItem('byg_saved_searches')
+        if (raw) setSavedSearches(JSON.parse(raw))
+      } catch {}
+    }
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSaveSearch = async () => {
     const name = saveNameInput.trim()
-    if (!name) return
-    persistSaved([...savedSearches, { name, filters: { ...f }, showOwn }])
+    if (!name || savingSearch) return
+    setSavingSearch(true)
+
+    if (user) {
+      // Authenticated: persist to DB
+      const token = await getToken()
+      if (!token) { setSavingSearch(false); return }
+      const res = await fetch('/api/saved-searches', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ name, filters: { ...f, showOwn } }),
+      }).catch(() => null)
+
+      if (res?.ok) {
+        const { search } = await res.json()
+        setSavedSearches(prev => [{ id: search.id, name, filters: { ...f }, showOwn }, ...prev])
+      }
+    } else {
+      // Guest: persist to localStorage
+      const updated = [...savedSearches, { name, filters: { ...f }, showOwn }]
+      setSavedSearches(updated)
+      try { localStorage.setItem('byg_saved_searches', JSON.stringify(updated)) } catch {}
+    }
+
     setSaveNameInput('')
     setShowSaveInput(false)
+    setSavingSearch(false)
   }
 
   const handleLoadSearch = (idx: number) => {
@@ -158,8 +215,25 @@ export default function InventorySearch() {
     setShowOwn(entry.showOwn)
   }
 
-  const handleDeleteSearch = (idx: number) =>
-    persistSaved(savedSearches.filter((_, i) => i !== idx))
+  const handleDeleteSearch = async (idx: number) => {
+    const target = savedSearches[idx]
+
+    if (user && target.id) {
+      // Authenticated: delete from DB
+      const token = await getToken()
+      if (!token) return
+      await fetch(`/api/saved-searches/${target.id}`, {
+        method:  'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {})
+    } else {
+      // Guest: remove from localStorage
+      const updated = savedSearches.filter((_, i) => i !== idx)
+      try { localStorage.setItem('byg_saved_searches', JSON.stringify(updated)) } catch {}
+    }
+
+    setSavedSearches(prev => prev.filter((_, i) => i !== idx))
+  }
 
   // Sync to URL
   useEffect(() => {
@@ -260,28 +334,46 @@ export default function InventorySearch() {
         )}
 
         {/* Save current search */}
-        {showSaveInput ? (
-          <div className="flex gap-1.5">
-            <input
-              type="text" autoFocus placeholder="Name this search…"
-              value={saveNameInput}
-              onChange={e => setSaveNameInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter')  handleSaveSearch()
-                if (e.key === 'Escape') { setShowSaveInput(false); setSaveNameInput('') }
-              }}
-              className="flex-1 px-2 py-1.5 border border-gray-200 text-xs focus:outline-none focus:border-gray-400 rounded"
-            />
-            <button onClick={handleSaveSearch}
-              className="px-2.5 py-1.5 text-xs text-white rounded"
-              style={{ backgroundColor: '#0c1f3f' }}>Save</button>
-          </div>
-        ) : hasFilters ? (
-          <button onClick={() => setShowSaveInput(true)}
-            className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
-            + Save current search
-          </button>
-        ) : null}
+        {hasFilters && (
+          user ? (
+            showSaveInput ? (
+              <div className="flex gap-1.5">
+                <input
+                  type="text" autoFocus placeholder="Name this search…"
+                  value={saveNameInput}
+                  onChange={e => setSaveNameInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter')  handleSaveSearch()
+                    if (e.key === 'Escape') { setShowSaveInput(false); setSaveNameInput('') }
+                  }}
+                  className="flex-1 px-2 py-1.5 border border-gray-200 text-xs focus:outline-none focus:border-gray-400 rounded"
+                />
+                <button
+                  onClick={handleSaveSearch}
+                  disabled={savingSearch}
+                  className="px-2.5 py-1.5 text-xs text-white rounded disabled:opacity-50"
+                  style={{ backgroundColor: '#0c1f3f' }}
+                >
+                  {savingSearch ? '…' : 'Save'}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowSaveInput(true)}
+                className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
+                + Save current search
+              </button>
+            )
+          ) : (
+            /* Guest CTA */
+            <Link
+              href="/account/signup"
+              className="block text-xs text-center py-2 px-3 rounded border transition-colors"
+              style={{ borderColor: '#c9a84c', color: '#c9a84c' }}
+            >
+              Create a free account to save searches
+            </Link>
+          )
+        )}
       </div>
 
       <hr className="border-gray-100" />
