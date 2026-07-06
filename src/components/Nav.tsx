@@ -22,8 +22,11 @@ export default function Nav() {
     router.push('/')
   }
 
-  // First letter of user's email for the avatar circle
-  const userInitial = user?.email?.[0]?.toUpperCase() ?? ''
+  // First + last initials from stored name, fallback to email initial
+  const fullName    = (user?.user_metadata?.full_name as string) ?? ''
+  const userInitial = fullName
+    ? fullName.trim().split(/\s+/).map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+    : (user?.email?.[0]?.toUpperCase() ?? '')
 
   // Timers to delay closing so mouse can travel from button into dropdown
   const aboutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
