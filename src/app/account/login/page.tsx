@@ -28,19 +28,25 @@ export default function LoginPage() {
 
     // Ensure buyer_profiles row exists (may have been skipped if email confirmation was required at signup)
     const token    = data.session?.access_token
-    const fullName = data.user?.user_metadata?.full_name as string | undefined
+    const meta     = data.user?.user_metadata ?? {}
+    const fullName = meta.full_name as string | undefined
     if (token && fullName) {
       fetch('/api/account/profile', {
         headers: { Authorization: `Bearer ${token}` },
       }).then(async r => {
         if (r.ok) {
           const d = await r.json()
-          // Profile missing — create it now using name from auth metadata
+          // Profile missing — create it now using all fields from auth metadata
           if (!d.profile) {
             fetch('/api/account/profile', {
               method:  'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body:    JSON.stringify({ name: fullName }),
+              body:    JSON.stringify({
+                name:        fullName,
+                phone:       meta.phone       ?? '',
+                looking_for: meta.looking_for ?? '',
+                timeline:    meta.timeline    ?? '',
+              }),
             }).catch(() => {})
           }
         }
