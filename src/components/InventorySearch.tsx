@@ -1,251 +1,417 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { type Listing } from '@/lib/listings'
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Filters = {
+  keyword:   string; make:      string; model:     string
+  condition: string; boatType:  string; fuelType:  string
+  minYear:   string; maxYear:   string
+  minLength: string; maxLength: string
+  minPrice:  string; maxPrice:  string
+  region:    string; country:   string; state:     string; city: string
+}
+
+type SavedSearch = { name: string; filters: Filters; showOwn: boolean }
+
+const EMPTY_FILTERS: Filters = {
+  keyword: '', make: '', model: '', condition: '', boatType: '', fuelType: '',
+  minYear: '', maxYear: '', minLength: '', maxLength: '', minPrice: '', maxPrice: '',
+  region: '', country: '', state: '', city: '',
+}
+
+// ── Search icon SVG ───────────────────────────────────────────────────────────
+const SearchIcon = () => (
+  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+  </svg>
+)
+
+// ── Chevron icon ──────────────────────────────────────────────────────────────
+const ChevronIcon = () => (
+  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+)
+
+// ── SearchInput — text field with magnifying glass prefix ─────────────────────
+function SearchInput({ placeholder, value, onChange }: {
+  placeholder: string; value: string; onChange: (v: string) => void
+}) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded focus-within:border-gray-400 transition-colors">
+      <SearchIcon />
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="flex-1 text-sm bg-transparent focus:outline-none placeholder-gray-400"
+      />
+    </div>
+  )
+}
+
+// ── SearchSelect — dropdown with magnifying glass prefix ──────────────────────
+function SearchSelect({ placeholder, value, onChange, children }: {
+  placeholder: string; value: string; onChange: (v: string) => void; children: React.ReactNode
+}) {
+  return (
+    <div className="relative flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded focus-within:border-gray-400 transition-colors">
+      <SearchIcon />
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="flex-1 text-sm bg-transparent focus:outline-none appearance-none cursor-pointer text-gray-700"
+      >
+        {children}
+      </select>
+      <ChevronIcon />
+    </div>
+  )
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function InventorySearch() {
   const searchParams = useSearchParams()
-  const router = useRouter()
+  const router       = useRouter()
 
-  // ── Server-fetched vessels ──────────────────────────────────────────────────
-  const [vessels, setVessels] = useState<Listing[]>([])
+  // Vessel results
+  const [vessels,     setVessels]     = useState<Listing[]>([])
   const [currentPage, setCurrentPage] = useState(0)
-  const [lastPage, setLastPage] = useState(1)
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [lastPage,    setLastPage]    = useState(1)
+  const [total,       setTotal]       = useState(0)
+  const [loading,     setLoading]     = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  // ── Dropdown options from /meta ─────────────────────────────────────────────
-  const [metaStates, setMetaStates] = useState<string[]>([])
+  // Meta dropdowns
+  const [metaStates,    setMetaStates]    = useState<string[]>([])
   const [metaFuelTypes, setMetaFuelTypes] = useState<string[]>([])
   const [metaBoatTypes, setMetaBoatTypes] = useState<string[]>([])
 
-  // ── Filter state — initialized from URL params ──────────────────────────────
-  const [keyword, setKeyword] = useState(() => searchParams.get('keyword') || '')
-  const [make, setMake] = useState(() => searchParams.get('make') || '')
-  const [model, setModel] = useState(() => searchParams.get('model') || '')
-  const [state, setState] = useState(() => searchParams.get('state') || '')
-  const [fuelType, setFuelType] = useState(() => searchParams.get('fuelType') || '')
-  const [boatType, setBoatType] = useState(() => searchParams.get('boatType') || '')
-  const [minPrice, setMinPrice] = useState(() => searchParams.get('minPrice') || '')
-  const [maxPrice, setMaxPrice] = useState(() => searchParams.get('maxPrice') || '')
-  const [minYear, setMinYear] = useState(() => searchParams.get('minYear') || '')
-  const [maxYear, setMaxYear] = useState(() => searchParams.get('maxYear') || '')
-  const [minLength, setMinLength] = useState(() => searchParams.get('minLength') || '')
-  const [maxLength, setMaxLength] = useState(() => searchParams.get('maxLength') || '')
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  // Filter state
+  const [f, setF] = useState<Filters>({
+    keyword:   searchParams.get('keyword')   || '',
+    make:      searchParams.get('make')      || '',
+    model:     searchParams.get('model')     || '',
+    condition: searchParams.get('condition') || '',
+    boatType:  searchParams.get('boatType')  || '',
+    fuelType:  searchParams.get('fuelType')  || '',
+    minYear:   searchParams.get('minYear')   || '',
+    maxYear:   searchParams.get('maxYear')   || '',
+    minLength: searchParams.get('minLength') || '',
+    maxLength: searchParams.get('maxLength') || '',
+    minPrice:  searchParams.get('minPrice')  || '',
+    maxPrice:  searchParams.get('maxPrice')  || '',
+    region:    searchParams.get('region')    || '',
+    country:   searchParams.get('country')   || '',
+    state:     searchParams.get('state')     || '',
+    city:      searchParams.get('city')      || '',
+  })
+
+  const set = (key: keyof Filters, val: string) =>
+    setF(prev => ({ ...prev, [key]: val }))
+
+  const hasFilters = Object.values(f).some(Boolean)
+
+  // Tab
   const [showOwn, setShowOwn] = useState(() => searchParams.get('tab') !== 'all')
 
-  // ── Sync filter state to URL so back button restores search ─────────────────
+  // Mobile sidebar
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Saved searches
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
+  const [showSaveInput, setShowSaveInput] = useState(false)
+  const [saveNameInput, setSaveNameInput] = useState('')
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('byg_saved_searches')
+      if (raw) setSavedSearches(JSON.parse(raw))
+    } catch {}
+  }, [])
+
+  const persistSaved = (list: SavedSearch[]) => {
+    setSavedSearches(list)
+    try { localStorage.setItem('byg_saved_searches', JSON.stringify(list)) } catch {}
+  }
+
+  const handleSaveSearch = () => {
+    const name = saveNameInput.trim()
+    if (!name) return
+    persistSaved([...savedSearches, { name, filters: { ...f }, showOwn }])
+    setSaveNameInput('')
+    setShowSaveInput(false)
+  }
+
+  const handleLoadSearch = (idx: number) => {
+    if (idx < 0) return
+    const entry = savedSearches[idx]
+    setF(entry.filters)
+    setShowOwn(entry.showOwn)
+  }
+
+  const handleDeleteSearch = (idx: number) =>
+    persistSaved(savedSearches.filter((_, i) => i !== idx))
+
+  // Sync to URL
   useEffect(() => {
     const p = new URLSearchParams()
     if (!showOwn) p.set('tab', 'all')
-    if (keyword)   p.set('keyword',   keyword)
-    if (make)      p.set('make',      make)
-    if (model)     p.set('model',     model)
-    if (state)     p.set('state',     state)
-    if (fuelType)  p.set('fuelType',  fuelType)
-    if (boatType)  p.set('boatType',  boatType)
-    if (minPrice)  p.set('minPrice',  minPrice)
-    if (maxPrice)  p.set('maxPrice',  maxPrice)
-    if (minYear)   p.set('minYear',   minYear)
-    if (maxYear)   p.set('maxYear',   maxYear)
-    if (minLength) p.set('minLength', minLength)
-    if (maxLength) p.set('maxLength', maxLength)
+    Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, v) })
     const qs = p.toString()
     router.replace(qs ? `/inventory?${qs}` : '/inventory', { scroll: false })
-  }, [showOwn, keyword, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [f, showOwn]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Debounce timer ref ──────────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Fetch dropdown options on mount ────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/vessels/meta')
-      .then(r => r.json())
-      .then(d => {
-        setMetaStates(d.states ?? [])
-        setMetaFuelTypes(d.fuelTypes ?? [])
-        setMetaBoatTypes(d.boatTypes ?? [])
-      })
-      .catch(() => {/* non-critical — dropdowns stay empty */})
+    fetch('/api/vessels/meta').then(r => r.json()).then(d => {
+      setMetaStates(d.states ?? [])
+      setMetaFuelTypes(d.fuelTypes ?? [])
+      setMetaBoatTypes(d.boatTypes ?? [])
+    }).catch(() => {})
   }, [])
 
-  // ── Build query string from current filters ─────────────────────────────────
   const buildParams = useCallback((page: number) => {
     const p = new URLSearchParams()
     p.set('page', String(page))
-    if (showOwn)   p.set('bygOnly',   'true')
-    if (keyword)   p.set('keyword',   keyword)
-    if (make)      p.set('make',      make)
-    if (model)     p.set('model',     model)
-    if (state)     p.set('state',     state)
-    if (fuelType)  p.set('fuelType',  fuelType)
-    if (boatType)  p.set('boatType',  boatType)
-    if (minPrice)  p.set('minPrice',  minPrice)
-    if (maxPrice)  p.set('maxPrice',  maxPrice)
-    if (minYear)   p.set('minYear',   minYear)
-    if (maxYear)   p.set('maxYear',   maxYear)
-    if (minLength) p.set('minLength', minLength)
-    if (maxLength) p.set('maxLength', maxLength)
+    if (showOwn) p.set('bygOnly', 'true')
+    Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, v) })
     return p.toString()
-  }, [showOwn, keyword, make, model, state, fuelType, boatType, minPrice, maxPrice, minYear, maxYear, minLength, maxLength])
+  }, [f, showOwn])
 
-  // ── Fetch page 1 (reset) or next page (append) ─────────────────────────────
   const fetchListings = useCallback(async (page: number, reset = false) => {
-    if (reset) { setLoading(true); setVessels([]) }
-    else setLoadingMore(true)
-
+    if (reset) { setLoading(true); setVessels([]) } else setLoadingMore(true)
     try {
-      const res = await fetch(`/api/vessels?${buildParams(page)}`)
+      const res  = await fetch(`/api/vessels?${buildParams(page)}`)
       const data = await res.json()
       setVessels(prev => reset ? data.listings : [...prev, ...data.listings])
       setCurrentPage(data.currentPage)
       setLastPage(data.lastPage)
       setTotal(data.total)
-    } catch (err) {
-      console.error('Failed to load vessels:', err)
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-    }
+    } catch (err) { console.error('Failed to load vessels:', err) }
+    finally { setLoading(false); setLoadingMore(false) }
   }, [buildParams])
 
-  // Initial load
   useEffect(() => { fetchListings(1, true) }, [fetchListings])
 
-  // ── Debounced re-search when server-side filters change ─────────────────────
-  const filtersKey = `${showOwn}|${keyword}|${make}|${model}|${state}|${fuelType}|${boatType}|${minPrice}|${maxPrice}|${minYear}|${maxYear}|${minLength}|${maxLength}`
+  const filtersKey = JSON.stringify({ f, showOwn })
   const isFirstRender = useRef(true)
-
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return }
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      fetchListings(1, true)
-    }, 600)
+    debounceRef.current = setTimeout(() => fetchListings(1, true), 600)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const clearFilters = () => {
-    setKeyword(''); setMake(''); setModel(''); setState(''); setFuelType(''); setBoatType('')
-    setMinPrice(''); setMaxPrice(''); setMinYear(''); setMaxYear(''); setMinLength(''); setMaxLength('')
-  }
+  // Shared label style
+  const labelCls = "block text-xs font-semibold uppercase tracking-wider mb-1.5"
+  const minMaxInput = (placeholder: string, value: string, onChange: (v: string) => void) => (
+    <input
+      type="text" inputMode="numeric" pattern="[0-9]*"
+      placeholder={placeholder} value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded placeholder-gray-400"
+    />
+  )
 
-  const hasFilters = keyword || make || model || state || fuelType || boatType ||
-    minPrice || maxPrice || minYear || maxYear || minLength || maxLength
-
-  // ── Client-side filters applied on top of server results ───────────────────
-  const filtered = useMemo(() => vessels, [vessels])
-
-  // ── Shared input/label styles ───────────────────────────────────────────────
-  const labelClass = "block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
-  const inputClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded"
-  const selectClass = "w-full px-3 py-2 border border-gray-200 text-sm bg-white focus:outline-none focus:border-gray-400 rounded appearance-none"
-
-  // ── Filter panel ────────────────────────────────────────────────────────────
+  // ── Filter panel ──────────────────────────────────────────────────────────
   const FilterPanel = () => (
     <div className="space-y-5">
 
-      <div>
-        <label className={labelClass}>Keyword Search</label>
-        <input
-          type="text"
-          placeholder="Search name, model, location..."
-          value={keyword}
-          onChange={e => setKeyword(e.target.value)}
-          className={inputClass}
-        />
+      {/* For Sale / Sold tab — mirrors the reference */}
+      <div className="flex rounded overflow-hidden border border-gray-200 text-xs mb-1">
+        <button
+          onClick={() => setShowOwn(true)}
+          className="flex-1 py-2.5 font-semibold uppercase tracking-wider transition-colors"
+          style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
+        >
+          BYG Listings
+        </button>
+        <button
+          onClick={() => setShowOwn(false)}
+          className="flex-1 py-2.5 font-semibold uppercase tracking-wider transition-colors"
+          style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
+        >
+          All Inventory
+        </button>
       </div>
 
+      {/* ── My Saved Searches ─────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Make / Manufacturer</label>
-        <input
-          type="text"
-          placeholder="e.g. Contender, Regulator..."
-          value={make}
-          onChange={e => setMake(e.target.value)}
-          className={inputClass}
-        />
-        <p className="text-xs text-gray-400 mt-1">Searches all {total.toLocaleString()} listings</p>
+        <p className={labelCls} style={{ color: '#0c1f3f' }}>My Saved Searches</p>
+
+        {/* Dropdown to load a saved search */}
+        <div className="relative flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded mb-2 focus-within:border-gray-400 transition-colors">
+          <select
+            defaultValue=""
+            onChange={e => { handleLoadSearch(Number(e.target.value)); e.currentTarget.value = '' }}
+            className="flex-1 text-sm bg-transparent focus:outline-none appearance-none cursor-pointer text-gray-500"
+          >
+            <option value="" disabled>Select a Search</option>
+            {savedSearches.map((s, i) => (
+              <option key={i} value={i}>{s.name}</option>
+            ))}
+          </select>
+          <ChevronIcon />
+        </div>
+
+        {/* Delete buttons for saved searches */}
+        {savedSearches.length > 0 && (
+          <div className="space-y-1 mb-2">
+            {savedSearches.map((s, i) => (
+              <div key={i} className="flex items-center justify-between gap-1 text-xs text-gray-400">
+                <span className="truncate">{s.name}</span>
+                <button onClick={() => handleDeleteSearch(i)}
+                  className="hover:text-red-400 transition-colors px-1 leading-none">×</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Save current search */}
+        {showSaveInput ? (
+          <div className="flex gap-1.5">
+            <input
+              type="text" autoFocus placeholder="Name this search…"
+              value={saveNameInput}
+              onChange={e => setSaveNameInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter')  handleSaveSearch()
+                if (e.key === 'Escape') { setShowSaveInput(false); setSaveNameInput('') }
+              }}
+              className="flex-1 px-2 py-1.5 border border-gray-200 text-xs focus:outline-none focus:border-gray-400 rounded"
+            />
+            <button onClick={handleSaveSearch}
+              className="px-2.5 py-1.5 text-xs text-white rounded"
+              style={{ backgroundColor: '#0c1f3f' }}>Save</button>
+          </div>
+        ) : hasFilters ? (
+          <button onClick={() => setShowSaveInput(true)}
+            className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
+            + Save current search
+          </button>
+        ) : null}
       </div>
 
+      <hr className="border-gray-100" />
+
+      {/* ── Keyword Search ────────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Model</label>
-        <input
-          type="text"
-          placeholder="e.g. 39 ST, 41 Express..."
-          value={model}
-          onChange={e => setModel(e.target.value)}
-          className={inputClass}
-        />
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Keyword Search</label>
+        <SearchInput placeholder="Search" value={f.keyword} onChange={v => set('keyword', v)} />
       </div>
 
+      {/* ── Make ──────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Location / State</label>
-        <select value={state} onChange={e => setState(e.target.value)} className={selectClass}>
-          <option value="">All States</option>
-          {metaStates.map(s => (
-            <option key={s} value={s.toLowerCase()}>{s}</option>
-          ))}
-        </select>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Make</label>
+        <SearchInput placeholder="Search Makes" value={f.make} onChange={v => set('make', v)} />
+        <p className="text-xs text-gray-400 mt-1">Across {total.toLocaleString()} listings</p>
       </div>
 
+      {/* ── Year ──────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Boat Type</label>
-        <select value={boatType} onChange={e => setBoatType(e.target.value)} className={selectClass}>
-          <option value="">All Types</option>
-          {metaBoatTypes.map(t => (
-            <option key={t} value={t.toLowerCase()}>{t}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className={labelClass}>Fuel Type</label>
-        <select value={fuelType} onChange={e => setFuelType(e.target.value)} className={selectClass}>
-          <option value="">All Fuel Types</option>
-          {metaFuelTypes.map(f => (
-            <option key={f} value={f.toLowerCase()}>{f}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className={labelClass}>Year</label>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Year</label>
         <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minYear}
-            onChange={e => setMinYear(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxYear}
-            onChange={e => setMaxYear(e.target.value)} className={inputClass} />
+          {minMaxInput('No Min', f.minYear, v => set('minYear', v))}
+          {minMaxInput('No Max', f.maxYear, v => set('maxYear', v))}
         </div>
       </div>
 
+      {/* ── Length ────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Length (ft)</label>
-        <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minLength}
-            onChange={e => setMinLength(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxLength}
-            onChange={e => setMaxLength(e.target.value)} className={inputClass} />
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Length</label>
+        <div className="flex gap-2 items-center">
+          {minMaxInput('No Min', f.minLength, v => set('minLength', v))}
+          {minMaxInput('No Max', f.maxLength, v => set('maxLength', v))}
+          <div className="shrink-0 flex items-center gap-1 px-2.5 py-2 border border-gray-200 rounded bg-white text-sm text-gray-500">
+            ft <ChevronIcon />
+          </div>
         </div>
       </div>
 
+      {/* ── Price ─────────────────────────────────────────────────────────── */}
       <div>
-        <label className={labelClass}>Price (USD)</label>
-        <div className="flex gap-2">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min" value={minPrice}
-            onChange={e => setMinPrice(e.target.value)} className={inputClass} />
-          <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Max" value={maxPrice}
-            onChange={e => setMaxPrice(e.target.value)} className={inputClass} />
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Price</label>
+        <div className="flex gap-2 items-center">
+          {minMaxInput('No Min', f.minPrice, v => set('minPrice', v))}
+          {minMaxInput('No Max', f.maxPrice, v => set('maxPrice', v))}
+          <div className="shrink-0 flex items-center gap-1 px-2.5 py-2 border border-gray-200 rounded bg-white text-sm text-gray-500">
+            USD <ChevronIcon />
+          </div>
         </div>
       </div>
 
+      {/* ── Condition ─────────────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Condition</label>
+        <div className="flex rounded overflow-hidden border border-gray-200 text-sm">
+          {(['', 'New', 'Used'] as const).map(c => (
+            <button
+              key={c || 'all'}
+              onClick={() => set('condition', c)}
+              className="flex-1 py-2.5 font-medium transition-colors"
+              style={{
+                backgroundColor: f.condition === c ? '#0c1f3f' : '#f9fafb',
+                color:           f.condition === c ? 'white'   : f.condition === '' && c === ''
+                  ? '#374151' : '#6b7280',
+                borderRight: c !== 'Used' ? '1px solid #e5e7eb' : 'none',
+              }}
+            >
+              {c || 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Class ─────────────────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Class</label>
+        <SearchSelect placeholder="Search Classes" value={f.boatType} onChange={v => set('boatType', v)}>
+          <option value="">Search Classes</option>
+          {metaBoatTypes.map(t => <option key={t} value={t.toLowerCase()}>{t}</option>)}
+        </SearchSelect>
+      </div>
+
+      {/* ── Region ────────────────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Region</label>
+        <SearchInput placeholder="Search Regions" value={f.region} onChange={v => set('region', v)} />
+      </div>
+
+      {/* ── Country ───────────────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>Country</label>
+        <SearchInput placeholder="Search Countries" value={f.country} onChange={v => set('country', v)} />
+      </div>
+
+      {/* ── State / Province ──────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>State / Province</label>
+        <SearchSelect placeholder="Search States" value={f.state} onChange={v => set('state', v)}>
+          <option value="">Search States</option>
+          {metaStates.map(s => <option key={s} value={s.toLowerCase()}>{s}</option>)}
+        </SearchSelect>
+      </div>
+
+      {/* ── City ──────────────────────────────────────────────────────────── */}
+      <div>
+        <label className={labelCls} style={{ color: '#0c1f3f' }}>City</label>
+        <SearchInput placeholder="Search Cities" value={f.city} onChange={v => set('city', v)} />
+      </div>
+
+      {/* ── Clear all ─────────────────────────────────────────────────────── */}
       {hasFilters && (
         <button
-          onClick={clearFilters}
+          onClick={() => setF(EMPTY_FILTERS)}
           className="w-full py-2 text-xs tracking-widest uppercase border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors rounded"
         >
           Clear All Filters ×
@@ -254,16 +420,13 @@ export default function InventorySearch() {
     </div>
   )
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row gap-10">
 
       {/* Sidebar — desktop */}
-      <aside className="hidden lg:block w-64 shrink-0">
+      <aside className="hidden lg:block w-72 shrink-0">
         <div className="bg-white border border-gray-100 p-6 rounded sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
-          <h2 className="text-sm font-bold tracking-widest uppercase mb-6" style={{ color: '#0c1f3f' }}>
-            Search Filters
-          </h2>
           {FilterPanel()}
         </div>
       </aside>
@@ -288,27 +451,11 @@ export default function InventorySearch() {
           </div>
         )}
 
-        {/* Results count + BYG toggle */}
+        {/* Results count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-400">
-            {loading ? 'Searching...' : `${total.toLocaleString()} vessels found`}
+            {loading ? 'Searching…' : `${total.toLocaleString()} vessels found`}
           </p>
-          <div className="flex rounded overflow-hidden border border-gray-200 text-xs">
-            <button
-              onClick={() => setShowOwn(true)}
-              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
-              style={{ backgroundColor: showOwn ? '#0c1f3f' : 'white', color: showOwn ? 'white' : '#6b7280' }}
-            >
-              BYG Listings
-            </button>
-            <button
-              onClick={() => setShowOwn(false)}
-              className="px-4 py-2 font-semibold uppercase tracking-wider transition-colors"
-              style={{ backgroundColor: !showOwn ? '#0c1f3f' : 'white', color: !showOwn ? 'white' : '#6b7280' }}
-            >
-              All Inventory
-            </button>
-          </div>
         </div>
 
         {/* Loading skeleton */}
@@ -326,12 +473,12 @@ export default function InventorySearch() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : vessels.length === 0 ? (
           <p className="text-center text-gray-400 py-20 text-lg">No vessels match your search.</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filtered.map((vessel) => (
+              {vessels.map(vessel => (
                 <Link
                   key={vessel.id}
                   href={`/inventory/${vessel.slug}`}
@@ -400,7 +547,7 @@ export default function InventorySearch() {
                   className="px-10 py-3 text-sm font-semibold tracking-widest uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-50"
                   style={{ backgroundColor: '#0c1f3f' }}
                 >
-                  {loadingMore ? 'Loading...' : 'Load More Vessels'}
+                  {loadingMore ? 'Loading…' : 'Load More Vessels'}
                 </button>
               </div>
             )}
