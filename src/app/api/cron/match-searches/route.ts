@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { unsubscribeUrl } from '@/lib/unsubscribe-token'
 import { Resend } from 'resend'
 
 const resend  = new Resend(process.env.RESEND_API_KEY)
@@ -56,16 +57,17 @@ async function fetchMatchingListings(filters: Record<string, string>): Promise<{
 
 // ── Build email HTML for Austin ───────────────────────────────────────────────
 function buildEmailHtml(params: {
-  buyerName:  string
-  buyerEmail: string
-  buyerPhone: string
-  lookingFor: string
-  timeline:   string
-  searchName: string
-  filters:    Record<string, string>
-  newVessels: { name: string; url: string; make: string; model: string; year: number; price: number; location: string }[]
+  buyerName:       string
+  buyerEmail:      string
+  buyerPhone:      string
+  lookingFor:      string
+  timeline:        string
+  searchName:      string
+  filters:         Record<string, string>
+  newVessels:      { name: string; url: string; make: string; model: string; year: number; price: number; location: string }[]
+  unsubscribeLink: string
 }): string {
-  const { buyerName, buyerEmail, buyerPhone, lookingFor, timeline, searchName, newVessels } = params
+  const { buyerName, buyerEmail, buyerPhone, lookingFor, timeline, searchName, newVessels, unsubscribeLink } = params
 
   const vesselRows = newVessels.map(v => `
     <tr>
@@ -124,6 +126,12 @@ function buildEmailHtml(params: {
           This is an automated alert from the BYG buyer matching system.
           Reach out to ${buyerName} directly — they haven't been notified by the system.
         </p>
+
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+        <p style="font-size:11px;color:#bbb;text-align:center;">
+          ${buyerName} can stop receiving these alerts by
+          <a href="${unsubscribeLink}" style="color:#bbb;">unsubscribing here</a>.
+        </p>
       </div>
     </div>
   `
@@ -179,14 +187,15 @@ export async function GET(req: NextRequest) {
             to:      'austin@breckyachtgroup.com',
             subject: `🎯 New match for ${profile.name} — "${search.name}" (${newListings.length} vessel${newListings.length !== 1 ? 's' : ''})`,
             html:    buildEmailHtml({
-              buyerName:  profile.name,
-              buyerEmail: user.email,
-              buyerPhone: profile.phone ?? '',
-              lookingFor: profile.looking_for ?? '',
-              timeline:   profile.timeline ?? '',
-              searchName: search.name,
+              buyerName:       profile.name,
+              buyerEmail:      user.email,
+              buyerPhone:      profile.phone ?? '',
+              lookingFor:      profile.looking_for ?? '',
+              timeline:        profile.timeline ?? '',
+              searchName:      search.name,
               filters,
-              newVessels: newListings,
+              newVessels:      newListings,
+              unsubscribeLink: unsubscribeUrl(profile.id, BASE_URL),
             }),
           })
           totalNotifications++
