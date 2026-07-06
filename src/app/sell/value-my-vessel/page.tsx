@@ -857,7 +857,7 @@ export default function ValueMyVesselPage() {
               {stage === 'unlocked' && (
                 <div className="space-y-6">
                   <div className="bg-green-50 border border-green-100 rounded px-4 py-3 text-sm text-green-700">
-                    ✓ Report unlocked. Austin will be in touch to compare notes.
+                    ✓ Report unlocked. BYG will be in touch to compare notes.
                   </div>
 
                   {/* Comp table */}
@@ -919,11 +919,11 @@ export default function ValueMyVesselPage() {
           <div className="border-l-4 pl-4 mb-8" style={{ borderColor: '#0c1f3f' }}>
             <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">Broker Assessment</p>
             <h2 className="text-2xl font-bold" style={{ color: '#0c1f3f' }}>Speak to a Broker</h2>
-            <p className="text-sm text-gray-400 mt-1">Personal valuation from Austin within 24 hours</p>
+            <p className="text-sm text-gray-400 mt-1">Personal valuation from BYG within 24 hours</p>
           </div>
 
           <p className="text-sm text-gray-500 leading-relaxed mb-8">
-            While our AI tool gives you an instant data-driven range, nothing replaces a broker who knows the market firsthand. Fill out the form below and Austin will review your vessel personally and follow up with a detailed market opinion.
+            While our AI tool gives you an instant data-driven range, nothing replaces a broker who knows the market firsthand. Fill out the form below and a BYG broker will review your vessel personally and follow up with a detailed market opinion.
           </p>
 
           <ValuationForm />
