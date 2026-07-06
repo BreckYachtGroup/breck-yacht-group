@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
     .from('buyer_profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle() // returns null (not an error) when no row exists
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ profile: data })
+  return NextResponse.json({ profile: data ?? null })
 }
 
 // ── POST /api/account/profile ─────────────────────────────────────────────────

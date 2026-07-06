@@ -31,12 +31,12 @@ export default function LoginPage() {
     const meta     = data.user?.user_metadata ?? {}
     const fullName = meta.full_name as string | undefined
     if (token && fullName) {
+      // Check if buyer_profiles row exists; create it if not
       fetch('/api/account/profile', {
         headers: { Authorization: `Bearer ${token}` },
-      }).then(async r => {
-        if (r.ok) {
-          const d = await r.json()
-          // Profile missing — create it now using all fields from auth metadata
+      })
+        .then(r => r.json())
+        .then(d => {
           if (!d.profile) {
             fetch('/api/account/profile', {
               method:  'POST',
@@ -49,8 +49,8 @@ export default function LoginPage() {
               }),
             }).catch(() => {})
           }
-        }
-      }).catch(() => {})
+        })
+        .catch(() => {})
     }
 
     router.push('/inventory')
