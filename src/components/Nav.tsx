@@ -1,13 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 export default function Nav() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
+  const [profileName, setProfileName] = useState('')
+
+  // Fetch buyer profile name when user logs in
+  useEffect(() => {
+    if (!user) { setProfileName(''); return }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      fetch('/api/account/profile', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.profile?.name) setProfileName(d.profile.name) })
+        .catch(() => {})
+    })
+  }, [user])
 
   const [aboutOpen, setAboutOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
@@ -22,10 +38,9 @@ export default function Nav() {
     router.push('/')
   }
 
-  // First + last initials from stored name, fallback to email initial
-  const fullName    = (user?.user_metadata?.full_name as string) ?? ''
-  const userInitial = fullName
-    ? fullName.trim().split(/\s+/).map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+  // First + last initials from profile name, fallback to email initial
+  const userInitial = profileName
+    ? profileName.trim().split(/\s+/).map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
     : (user?.email?.[0]?.toUpperCase() ?? '')
 
   // Timers to delay closing so mouse can travel from button into dropdown
