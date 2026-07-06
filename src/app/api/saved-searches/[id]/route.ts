@@ -19,15 +19,17 @@ async function getUser(req: NextRequest) {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
+
   const { error } = await supabaseAdmin
     .from('saved_searches')
     .delete()
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id) // ensures users can only delete their own searches
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
