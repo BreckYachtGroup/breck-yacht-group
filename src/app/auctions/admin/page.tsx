@@ -39,7 +39,7 @@ export default function AuctionAdminPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.replace('/account/login'); return }
-      if (session.user.email !== 'austin@breckyachtgroup.com') {
+      if (session.user.email !== 'huebya@gmail.com') {
         router.replace('/'); return
       }
       setToken(session.access_token)
