@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import NewsletterSignup from '@/components/NewsletterSignup'
 
 type Auction = {
   id: string; slug: string; title: string; make: string; model: string
@@ -134,13 +133,6 @@ export default function AuctionsPage() {
             )}
           </>
         )}
-      </div>
-
-      {/* Newsletter signup */}
-      <div style={{ backgroundColor: '#0c1f3f', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-xl mx-auto px-8 py-16">
-          <NewsletterSignup />
-        </div>
       </div>
 
     </div>

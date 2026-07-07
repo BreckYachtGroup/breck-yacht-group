@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="max-w-6xl mx-auto px-8 py-12 flex flex-col md:flex-row gap-12 md:gap-0">
 
             {/* Left — newsletter */}
-            <div className="md:w-1/2 md:pr-16 md:border-r" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+            <div className="md:w-1/2 md:pr-16 md:border-r flex flex-col justify-center" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
               <NewsletterSignup />
             </div>
 
