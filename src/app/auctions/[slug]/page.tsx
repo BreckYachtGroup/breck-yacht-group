@@ -361,39 +361,8 @@ export default function AuctionDetailPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-
-            {/* Feed */}
-            <div className="xl:col-span-2">
-              {feed.length === 0 ? (
-                <p className="text-white/20 text-sm py-8">
-                  No activity yet. Place a bid or leave a comment to get the conversation started.
-                </p>
-              ) : (
-                <div className="space-y-px">
-                  {feed.map((item, i) => (
-                    item.kind === 'bid' ? (
-                      <BidFeedItem key={`bid-${item.data.id}`} bid={item.data} isLatest={
-                        // highest bid check
-                        item.data.amount === Math.max(...bids.map(b => b.amount))
-                      } />
-                    ) : (
-                      <CommentFeedItem
-                        key={`comment-${item.data.id}`}
-                        comment={item.data}
-                        isOwn={user?.id === item.data.user_id}
-                        onDelete={handleDeleteComment}
-                      />
-                    )
-                  ))}
-                  <div ref={feedEndRef} />
-                </div>
-              )}
-            </div>
-
-            {/* Comment form */}
-            <div>
-              <div className="sticky top-6 p-6" style={{ backgroundColor: '#111' }}>
+          {/* Comment form — above the feed */}
+          <div className="mb-8 p-6 max-w-2xl" style={{ backgroundColor: '#111' }}>
                 <h3 className="text-xs uppercase tracking-widest text-white/30 mb-4">Leave a Comment</h3>
                 {user ? (
                   <form onSubmit={handleComment} className="space-y-3">
@@ -431,12 +400,36 @@ export default function AuctionDetailPage() {
                     </a>
                   </div>
                 )}
-              </div>
-            </div>
-
           </div>
-        </div>
 
+          {/* Feed */}
+          <div>
+            {feed.length === 0 ? (
+              <p className="text-white/20 text-sm py-8">
+                No activity yet. Place a bid or leave a comment to get the conversation started.
+              </p>
+            ) : (
+              <div className="space-y-px">
+                {feed.map((item) => (
+                  item.kind === 'bid' ? (
+                    <BidFeedItem key={`bid-${item.data.id}`} bid={item.data} isLatest={
+                      item.data.amount === Math.max(...bids.map(b => b.amount))
+                    } />
+                  ) : (
+                    <CommentFeedItem
+                      key={`comment-${item.data.id}`}
+                      comment={item.data}
+                      isOwn={user?.id === item.data.user_id}
+                      onDelete={handleDeleteComment}
+                    />
+                  )
+                ))}
+                <div ref={feedEndRef} />
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
     </div>
   )
