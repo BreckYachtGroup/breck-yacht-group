@@ -8,8 +8,8 @@
  *  - Auction must be in 'active' status
  *  - Auction must not have ended (ends_at > now)
  *  - Bid must exceed current_bid by at least $100 (minimum increment)
- *  - Anti-snipe: if bid lands within 5 minutes of ends_at,
- *    extend ends_at by 5 minutes (max 10 extensions per auction)
+ *  - Anti-snipe: if bid lands within 3 minutes of ends_at,
+ *    reset ends_at to 3 minutes from now (max 10 extensions per auction)
  *
  * Auth: Authorization: Bearer <supabase_access_token>
  */
@@ -17,9 +17,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-const MIN_INCREMENT = 100 // minimum bid increment in dollars
-const SNIPE_WINDOW  = 5 * 60 * 1000  // 5 minutes in ms
-const SNIPE_EXTEND  = 5 * 60 * 1000  // extend by 5 minutes
+const MIN_INCREMENT  = 100             // minimum bid increment in dollars
+const SNIPE_WINDOW   = 3 * 60 * 1000  // trigger if < 3 minutes remain
+const SNIPE_EXTEND   = 3 * 60 * 1000  // reset timer to 3 minutes from now
 const MAX_EXTENSIONS = 10
 
 export async function POST(

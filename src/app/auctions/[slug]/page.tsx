@@ -45,7 +45,7 @@ function useCountdown(endsAt: string) {
     minutes: Math.floor((s % 3600) / 60),
     seconds: s % 60,
     ended:   false,
-    urgent:  diff < 5 * 60 * 1000,
+    urgent:  diff < 3 * 60 * 1000,
   }
 }
 
@@ -477,7 +477,7 @@ export default function AuctionDetailPage() {
                         {submitting ? 'Placing Bid…' : 'Place Bid'}
                       </button>
                       <p className="text-xs text-white/25 text-center leading-snug">
-                        All bids are binding. Bids within the last 5 minutes extend the auction by 5 minutes.
+                        All bids are binding. Bids placed in the final 3 minutes reset the timer back to 3 minutes.
                       </p>
                     </form>
                   ) : (
