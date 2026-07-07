@@ -96,18 +96,10 @@ export default function AuctionDetailPage() {
     }
   }, [])
 
-  // ── Track footer position so fixed panel stops at footer edge ─────────────
+  // ── Measure footer height once — panel bottom stops above footer ──────────
   useEffect(() => {
-    function onScroll() {
-      const footer = document.querySelector('footer')
-      if (!footer) return
-      // How many px of footer are visible from viewport bottom
-      const gap = window.innerHeight - footer.getBoundingClientRect().top
-      setPanelBottom(Math.max(0, gap))
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+    const footer = document.querySelector('footer')
+    if (footer) setPanelBottom(footer.getBoundingClientRect().height)
   }, [])
 
   // ── Supabase Realtime ──────────────────────────────────────────────────────
@@ -372,7 +364,6 @@ export default function AuctionDetailPage() {
           backgroundColor: '#0c0c0c',
           borderLeft: '1px solid #1a1a1a',
           overflow: 'hidden',
-          transition: 'bottom 0.15s ease-out',
           zIndex: 10,
         }}><div className="p-4 space-y-3">
 
