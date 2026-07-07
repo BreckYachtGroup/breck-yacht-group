@@ -195,11 +195,11 @@ export default function AuctionDetailPage() {
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 xl:items-start">
 
-          {/* ── Left: gallery + details ─────────────────────────────────── */}
-          <div className="xl:col-span-3 space-y-8">
+          {/* ── Left: gallery + details + activity (scrolls) ────────────── */}
+          <div className="xl:col-span-3 space-y-8 py-12 xl:pr-12">
 
             {/* Gallery */}
             <div>
@@ -272,11 +272,76 @@ export default function AuctionDetailPage() {
                 <p className="text-white/70 leading-relaxed text-sm whitespace-pre-line">{auction.description}</p>
               </div>
             )}
+
+            {/* ── Activity & Discussion (inside left column) ──────────── */}
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '48px' }}>
+              <div className="flex items-baseline gap-4 mb-8">
+                <h2 className="text-lg font-bold">Activity & Discussion</h2>
+                <span className="text-xs text-white/30 uppercase tracking-wider">
+                  {feed.length} item{feed.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Comment form */}
+              <div className="mb-8 p-6" style={{ backgroundColor: '#111' }}>
+                <h3 className="text-xs uppercase tracking-widest text-white/30 mb-4">Leave a Comment</h3>
+                {user ? (
+                  <form onSubmit={handleComment} className="space-y-3">
+                    <textarea
+                      value={commentText}
+                      onChange={e => { setCommentText(e.target.value); setCommentError('') }}
+                      rows={4} maxLength={1000}
+                      placeholder="Ask a question, share your experience with this vessel, or contribute to the discussion…"
+                      className="w-full px-4 py-3 text-white text-sm bg-transparent border focus:outline-none focus:border-yellow-500/50 resize-none leading-relaxed"
+                      style={{ backgroundColor: '#1a1a1a', borderColor: '#333' }}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/20">{commentText.length}/1000</span>
+                      {commentError && <p className="text-red-400 text-xs">{commentError}</p>}
+                    </div>
+                    <button type="submit" disabled={commentSubmitting || !commentText.trim()}
+                      className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-40"
+                      style={{ backgroundColor: '#0c1f3f', border: '1px solid #c9a84c', color: '#c9a84c' }}>
+                      {commentSubmitting ? 'Posting…' : 'Post Comment'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-center space-y-3">
+                    <p className="text-white/40 text-sm leading-relaxed">Sign in to join the discussion.</p>
+                    <a href="/account/login"
+                      className="block py-3 text-sm font-bold uppercase tracking-wider text-center"
+                      style={{ border: '1px solid #c9a84c', color: '#c9a84c' }}>
+                      Sign In to Comment
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Feed */}
+              {feed.length === 0 ? (
+                <p className="text-white/20 text-sm py-8">No activity yet. Place a bid or leave a comment to get the conversation started.</p>
+              ) : (
+                <div className="space-y-px">
+                  {feed.map((item) => (
+                    item.kind === 'bid' ? (
+                      <BidFeedItem key={`bid-${item.data.id}`} bid={item.data}
+                        isLatest={item.data.amount === Math.max(...bids.map(b => b.amount))} />
+                    ) : (
+                      <CommentFeedItem key={`comment-${item.data.id}`} comment={item.data}
+                        isOwn={user?.id === item.data.user_id} onDelete={handleDeleteComment} />
+                    )
+                  ))}
+                  <div ref={feedEndRef} />
+                </div>
+              )}
+            </div>
+
           </div>
 
-          {/* ── Right: bid panel ────────────────────────────────────────── */}
-          <div className="xl:col-span-2">
-            <div className="sticky top-6 space-y-5">
+          {/* ── Right: bid panel (sticky, full viewport height) ─────────── */}
+          <div className="hidden xl:block xl:col-span-2 sticky top-0 h-screen overflow-y-auto"
+            style={{ backgroundColor: '#0c0c0c', borderLeft: '1px solid #1a1a1a' }}>
+            <div className="p-6 space-y-5">
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} />}
               {!isActive && (
@@ -352,84 +417,6 @@ export default function AuctionDetailPage() {
           </div>
         </div>
 
-        {/* ── Full-width Activity & Discussion ─────────────────────────────── */}
-        <div className="mt-16" style={{ borderTop: '1px solid #1a1a1a', paddingTop: '48px' }}>
-          <div className="flex items-baseline gap-4 mb-8">
-            <h2 className="text-lg font-bold">Activity & Discussion</h2>
-            <span className="text-xs text-white/30 uppercase tracking-wider">
-              {feed.length} item{feed.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {/* Comment form — above the feed */}
-          <div className="mb-8 p-6 max-w-2xl" style={{ backgroundColor: '#111' }}>
-                <h3 className="text-xs uppercase tracking-widest text-white/30 mb-4">Leave a Comment</h3>
-                {user ? (
-                  <form onSubmit={handleComment} className="space-y-3">
-                    <textarea
-                      value={commentText}
-                      onChange={e => { setCommentText(e.target.value); setCommentError('') }}
-                      rows={4}
-                      maxLength={1000}
-                      placeholder="Ask a question, share your experience with this vessel, or contribute to the discussion…"
-                      className="w-full px-4 py-3 text-white text-sm bg-transparent border focus:outline-none focus:border-yellow-500/50 resize-none leading-relaxed"
-                      style={{ backgroundColor: '#1a1a1a', borderColor: '#333' }}
-                    />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/20">{commentText.length}/1000</span>
-                      {commentError && <p className="text-red-400 text-xs">{commentError}</p>}
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={commentSubmitting || !commentText.trim()}
-                      className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-40"
-                      style={{ backgroundColor: '#0c1f3f', border: '1px solid #c9a84c', color: '#c9a84c' }}
-                    >
-                      {commentSubmitting ? 'Posting…' : 'Post Comment'}
-                    </button>
-                  </form>
-                ) : (
-                  <div className="text-center space-y-3">
-                    <p className="text-white/40 text-sm leading-relaxed">
-                      Sign in to join the discussion and ask questions about this vessel.
-                    </p>
-                    <a href="/account/login"
-                      className="block py-3 text-sm font-bold uppercase tracking-wider text-center"
-                      style={{ border: '1px solid #c9a84c', color: '#c9a84c' }}>
-                      Sign In to Comment
-                    </a>
-                  </div>
-                )}
-          </div>
-
-          {/* Feed — same width as comment box */}
-          <div className="max-w-2xl">
-            {feed.length === 0 ? (
-              <p className="text-white/20 text-sm py-8">
-                No activity yet. Place a bid or leave a comment to get the conversation started.
-              </p>
-            ) : (
-              <div className="space-y-px">
-                {feed.map((item) => (
-                  item.kind === 'bid' ? (
-                    <BidFeedItem key={`bid-${item.data.id}`} bid={item.data} isLatest={
-                      item.data.amount === Math.max(...bids.map(b => b.amount))
-                    } />
-                  ) : (
-                    <CommentFeedItem
-                      key={`comment-${item.data.id}`}
-                      comment={item.data}
-                      isOwn={user?.id === item.data.user_id}
-                      onDelete={handleDeleteComment}
-                    />
-                  )
-                ))}
-                <div ref={feedEndRef} />
-              </div>
-            )}
-          </div>
-
-        </div>
       </div>
     </div>
   )
