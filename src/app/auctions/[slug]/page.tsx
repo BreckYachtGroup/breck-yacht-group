@@ -56,8 +56,6 @@ export default function AuctionDetailPage() {
   const router     = useRouter()
 
   const [panelBottom, setPanelBottom] = useState(0)
-  const [panelTop,    setPanelTop]    = useState(124) // nav (~72px) + back bar (~52px)
-  const backBarRef = useRef<HTMLDivElement>(null)
   const [auction,    setAuction]    = useState<Auction | null>(null)
   const [bids,       setBids]       = useState<Bid[]>([])
   const [comments,   setComments]   = useState<Comment[]>([])
@@ -88,12 +86,8 @@ export default function AuctionDetailPage() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // ── Measure back bar once auction has loaded and DOM is painted ──────────
-  useEffect(() => {
-    if (!loading && backBarRef.current) {
-      setPanelTop(backBarRef.current.getBoundingClientRect().bottom)
-    }
-  }, [loading])
+  // ── Reset scroll to top on load (prevent browser scroll restoration) ──────
+  useEffect(() => { window.scrollTo(0, 0) }, [])
 
   // ── Measure footer height once — panel bottom stops above footer ──────────
   useEffect(() => {
@@ -200,8 +194,8 @@ export default function AuctionDetailPage() {
   return (
     <div style={{ backgroundColor: '#0c0c0c' }} className="min-h-screen text-white">
 
-      {/* Back bar — measured so panel starts exactly below it */}
-      <div ref={backBarRef} style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4">
+      {/* Back bar */}
+      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4">
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
@@ -350,13 +344,13 @@ export default function AuctionDetailPage() {
       <div className="hidden xl:block"
         style={{
           position: 'fixed',
-          top: `${panelTop}px`,
+          top: '124px',       // nav (72px) + back bar (52px)
           right: '0',
           width: '400px',
           bottom: `${panelBottom}px`,
           backgroundColor: '#0c0c0c',
           borderLeft: '1px solid #1a1a1a',
-          overflow: 'hidden',
+          overflowY: 'auto',
           zIndex: 10,
         }}><div className="p-4 space-y-3">
 
