@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const router = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -81,12 +83,24 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls} style={{ marginBottom: 0 }}>Password</label>
+                <Link href="/account/forgot-password"
+                  className="text-xs text-gray-400 hover:text-gray-600 underline">
+                  Forgot password?
+                </Link>
+              </div>
               <input type="password" required value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Your password"
                 className={inputCls} />
             </div>
+
+            {resetSuccess && (
+              <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded px-4 py-3">
+                Password updated successfully. Sign in with your new password.
+              </p>
+            )}
 
             {error && (
               <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded px-4 py-3">
