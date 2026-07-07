@@ -56,7 +56,7 @@ export default function AuctionDetailPage() {
   const router     = useRouter()
 
   const [panelBottom, setPanelBottom] = useState(0)
-  const [panelTop,    setPanelTop]    = useState(72)
+  const [panelTop,    setPanelTop]    = useState(124) // nav (~72px) + back bar (~52px)
   const backBarRef = useRef<HTMLDivElement>(null)
   const [auction,    setAuction]    = useState<Auction | null>(null)
   const [bids,       setBids]       = useState<Bid[]>([])
@@ -89,12 +89,12 @@ export default function AuctionDetailPage() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // ── Measure back bar height so panel starts below it ─────────────────────
+  // ── Measure back bar once auction has loaded and DOM is painted ──────────
   useEffect(() => {
-    if (backBarRef.current) {
+    if (!loading && backBarRef.current) {
       setPanelTop(backBarRef.current.getBoundingClientRect().bottom)
     }
-  }, [])
+  }, [loading])
 
   // ── Measure footer height once — panel bottom stops above footer ──────────
   useEffect(() => {
