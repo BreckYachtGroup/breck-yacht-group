@@ -24,7 +24,7 @@ export default function NewsletterSignup() {
   }
 
   return (
-    <div className="border-t py-8 mt-6" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+    <div>
       <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: '#c9a84c' }}>
         Stay in the Loop
       </p>
