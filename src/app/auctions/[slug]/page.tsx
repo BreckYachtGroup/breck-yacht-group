@@ -16,7 +16,7 @@ type Auction = {
   extended_count: number
 }
 type Bid = { id: string; amount: number; created_at: string; bidder_id: string }
-type Comment = { id: string; user_id: string; display_name: string; body: string; image_url: string | null; created_at: string }
+type Comment = { id: string; user_id: string; display_name: string; body: string; image_url: string | null; like_count: number; flag_count: number; created_at: string }
 type FeedItem =
   | { kind: 'bid';     data: Bid }
   | { kind: 'comment'; data: Comment }
@@ -72,8 +72,10 @@ export default function AuctionDetailPage() {
   const [commentImageUploading, setCommentImageUploading] = useState(false)
   const commentFileRef = useRef<HTMLInputElement>(null)
   const [termsAgreed,  setTermsAgreed]  = useState(false)
-  const [watching,     setWatching]     = useState(false)
-  const [watchLoading, setWatchLoading] = useState(false)
+  const [watching,       setWatching]       = useState(false)
+  const [watchLoading,   setWatchLoading]   = useState(false)
+  const [likedComments,  setLikedComments]  = useState<Set<string>>(new Set())
+  const [flaggedComments,setFlaggedComments]= useState<Set<string>>(new Set())
   const endProcessedRef = useRef(false)
 
   // ── Fetch auction + bids + comments ───────────────────────────────────────
@@ -103,6 +105,19 @@ export default function AuctionDetailPage() {
       }).then(r => r.json()).then(d => setWatching(d.watching ?? false)).catch(() => {})
     })
   }, [slug, user])
+
+  // ── Fetch user's liked/flagged comments ───────────────────────────────────
+  useEffect(() => {
+    if (!user || comments.length === 0) return
+    const ids = comments.map(c => c.id)
+    Promise.all([
+      supabase.from('auction_comment_likes').select('comment_id').in('comment_id', ids),
+      supabase.from('auction_comment_flags').select('comment_id').in('comment_id', ids),
+    ]).then(([likes, flags]) => {
+      setLikedComments(new Set((likes.data ?? []).map(l => l.comment_id)))
+      setFlaggedComments(new Set((flags.data ?? []).map(f => f.comment_id)))
+    }).catch(() => {})
+  }, [user, comments.length])
 
   // ── Reset scroll to top on load (prevent browser scroll restoration) ──────
   useEffect(() => { window.scrollTo(0, 0) }, [])
@@ -225,6 +240,40 @@ export default function AuctionDetailPage() {
       body: JSON.stringify({ id: commentId }),
     })
     setComments(prev => prev.filter(c => c.id !== commentId))
+  }
+
+  // ── Like / unlike a comment ────────────────────────────────────────────────
+  async function handleLikeComment(commentId: string) {
+    if (!user) { router.push('/account/login'); return }
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const isLiked = likedComments.has(commentId)
+    // Optimistic update
+    setLikedComments(prev => { const n = new Set(prev); isLiked ? n.delete(commentId) : n.add(commentId); return n })
+    setComments(prev => prev.map(c => c.id === commentId ? { ...c, like_count: c.like_count + (isLiked ? -1 : 1) } : c))
+    await fetch(`/api/auctions/${slug}/comments/${commentId}/like`, {
+      method: isLiked ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).catch(() => {
+      // Revert on error
+      setLikedComments(prev => { const n = new Set(prev); isLiked ? n.add(commentId) : n.delete(commentId); return n })
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, like_count: c.like_count + (isLiked ? 1 : -1) } : c))
+    })
+  }
+
+  // ── Flag a comment as not constructive ─────────────────────────────────────
+  async function handleFlagComment(commentId: string) {
+    if (!user) { router.push('/account/login'); return }
+    if (flaggedComments.has(commentId)) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    setFlaggedComments(prev => new Set([...prev, commentId]))
+    await fetch(`/api/auctions/${slug}/comments/${commentId}/flag`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).catch(() => {
+      setFlaggedComments(prev => { const n = new Set(prev); n.delete(commentId); return n })
+    })
   }
 
   // ── Build merged feed ──────────────────────────────────────────────────────
@@ -435,7 +484,12 @@ export default function AuctionDetailPage() {
                         isLatest={item.data.amount === Math.max(...bids.map(b => b.amount))} />
                     ) : (
                       <CommentFeedItem key={`comment-${item.data.id}`} comment={item.data}
-                        isOwn={user?.id === item.data.user_id} onDelete={handleDeleteComment} />
+                        isOwn={user?.id === item.data.user_id}
+                        onDelete={handleDeleteComment}
+                        liked={likedComments.has(item.data.id)}
+                        onLike={() => handleLikeComment(item.data.id)}
+                        flagged={flaggedComments.has(item.data.id)}
+                        onFlag={() => handleFlagComment(item.data.id)} />
                     )
                   ))}
                 </div>
@@ -574,8 +628,14 @@ function BidFeedItem({ bid, isLatest }: { bid: Bid; isLatest: boolean }) {
 }
 
 // ── Feed item: comment ────────────────────────────────────────────────────────
-function CommentFeedItem({ comment, isOwn, onDelete }: {
-  comment: Comment; isOwn: boolean; onDelete: (id: string) => void
+function CommentFeedItem({ comment, isOwn, onDelete, liked, onLike, flagged, onFlag }: {
+  comment: Comment
+  isOwn: boolean
+  onDelete: (id: string) => void
+  liked: boolean
+  onLike: () => void
+  flagged: boolean
+  onFlag: () => void
 }) {
   const [imgOpen, setImgOpen] = useState(false)
 
@@ -612,6 +672,40 @@ function CommentFeedItem({ comment, isOwn, onDelete }: {
               />
             </div>
           )}
+
+          {/* Like + Flag row */}
+          <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid #1a1a1a' }}>
+
+            {/* Thumbs up */}
+            <button onClick={onLike}
+              className="flex items-center gap-1.5 text-xs transition-colors hover:opacity-80"
+              style={{ color: liked ? '#c9a84c' : 'rgba(255,255,255,0.25)' }}
+              aria-label="Like comment">
+              {/* Thumbs up icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={liked ? 'currentColor' : 'none'}
+                viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+              </svg>
+              {comment.like_count > 0 && <span className="tabular-nums">{comment.like_count}</span>}
+            </button>
+
+            {/* Flag — only shown on others' comments */}
+            {!isOwn && (
+              <button onClick={onFlag} disabled={flagged}
+                className="flex items-center gap-1.5 text-xs transition-colors hover:opacity-80 disabled:cursor-default"
+                style={{ color: flagged ? '#ef4444' : 'rgba(255,255,255,0.18)' }}
+                aria-label="Flag as not constructive">
+                {/* Flag icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill={flagged ? 'currentColor' : 'none'}
+                  viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
+                </svg>
+                {flagged ? 'Flagged' : 'Flag as not constructive'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

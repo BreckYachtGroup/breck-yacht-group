@@ -30,7 +30,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('auction_comments')
-    .select('id, user_id, display_name, body, image_url, created_at')
+    .select('id, user_id, display_name, body, image_url, like_count, flag_count, created_at')
     .eq('auction_id', auction.id)
     .order('created_at', { ascending: true })
 
@@ -81,7 +81,7 @@ export async function POST(
       body:         text,
       image_url:    imageUrl,
     })
-    .select('id, user_id, display_name, body, image_url, created_at')
+    .select('id, user_id, display_name, body, image_url, like_count, flag_count, created_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
