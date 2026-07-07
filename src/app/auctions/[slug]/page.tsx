@@ -110,22 +110,18 @@ export default function AuctionDetailPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'auction_listings', filter: `id=eq.${auction.id}` },
         (p) => setAuction(prev => prev ? { ...prev, ...p.new as Partial<Auction> } : prev))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'auction_bids', filter: `auction_id=eq.${auction.id}` },
-        (p) => setBids(prev => [...prev, p.new as Bid]))
+        (p) => {
+          setBids(prev => [...prev, p.new as Bid])
+          setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'auction_comments', filter: `auction_id=eq.${auction.id}` },
-        (p) => setComments(prev => [...prev, p.new as Comment]))
+        (p) => {
+          setComments(prev => [...prev, p.new as Comment])
+          setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [auction?.id])
-
-  // Scroll feed to bottom only when NEW items arrive (not on initial load)
-  const feedLengthRef = useRef<number | null>(null)
-  useEffect(() => {
-    const total = bids.length + comments.length
-    if (feedLengthRef.current !== null && total > feedLengthRef.current) {
-      feedEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-    feedLengthRef.current = total
-  }, [bids.length, comments.length])
 
   // ── Place bid ──────────────────────────────────────────────────────────────
   async function handleBid(e: React.FormEvent) {
