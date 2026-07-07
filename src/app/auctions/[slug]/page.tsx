@@ -70,7 +70,6 @@ export default function AuctionDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [commentError, setCommentError] = useState('')
   const [commentSubmitting, setCommentSubmitting] = useState(false)
-  const feedEndRef = useRef<HTMLDivElement>(null)
 
   // ── Fetch auction + bids + comments ───────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -110,15 +109,9 @@ export default function AuctionDetailPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'auction_listings', filter: `id=eq.${auction.id}` },
         (p) => setAuction(prev => prev ? { ...prev, ...p.new as Partial<Auction> } : prev))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'auction_bids', filter: `auction_id=eq.${auction.id}` },
-        (p) => {
-          setBids(prev => [...prev, p.new as Bid])
-          setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-        })
+        (p) => setBids(prev => [...prev, p.new as Bid]))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'auction_comments', filter: `auction_id=eq.${auction.id}` },
-        (p) => {
-          setComments(prev => [...prev, p.new as Comment])
-          setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-        })
+        (p) => setComments(prev => [...prev, p.new as Comment]))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [auction?.id])
@@ -182,7 +175,7 @@ export default function AuctionDetailPage() {
   const feed: FeedItem[] = [
     ...bids.map(b => ({ kind: 'bid' as const, data: b })),
     ...comments.map(c => ({ kind: 'comment' as const, data: c })),
-  ].sort((a, b) => new Date(a.data.created_at).getTime() - new Date(b.data.created_at).getTime())
+  ].sort((a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime())
 
   // ── Loading / 404 ──────────────────────────────────────────────────────────
   if (loading) return (
@@ -346,7 +339,6 @@ export default function AuctionDetailPage() {
                         isOwn={user?.id === item.data.user_id} onDelete={handleDeleteComment} />
                     )
                   ))}
-                  <div ref={feedEndRef} />
                 </div>
               )}
             </div>
