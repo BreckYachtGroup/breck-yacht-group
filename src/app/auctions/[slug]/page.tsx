@@ -188,18 +188,18 @@ export default function AuctionDetailPage() {
   const isWinner = user?.id === auction.current_bidder_id
 
   return (
-    <div style={{ backgroundColor: '#0c0c0c' }} className="min-h-screen text-white">
+    <div style={{ backgroundColor: '#0c0c0c' }} className="flex flex-col text-white">
 
       {/* Back */}
-      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4">
+      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4 flex-shrink-0">
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 xl:grid-cols-5 xl:items-start">
+      {/* Two-panel: left scrolls, right is fixed */}
+      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 113px)' }}>
 
-          {/* ── Left: gallery + details + activity (scrolls) ────────────── */}
-          <div className="xl:col-span-3 space-y-8 py-12 xl:pr-12">
+        {/* ── Left: scrollable ─────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto px-8 py-12 space-y-8">
 
             {/* Gallery */}
             <div>
@@ -338,10 +338,10 @@ export default function AuctionDetailPage() {
 
           </div>
 
-          {/* ── Right: bid panel (sticky, full viewport height) ─────────── */}
-          <div className="hidden xl:block xl:col-span-2 sticky top-0 h-screen overflow-y-auto"
-            style={{ backgroundColor: '#0c0c0c', borderLeft: '1px solid #1a1a1a' }}>
-            <div className="p-6 space-y-5">
+        {/* ── Right: fixed panel ───────────────────────────────────────── */}
+        <div className="hidden xl:flex xl:flex-col w-96 flex-shrink-0 overflow-y-auto"
+          style={{ backgroundColor: '#0c0c0c', borderLeft: '1px solid #1a1a1a' }}>
+          <div className="p-6 space-y-5 flex-1">
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} />}
               {!isActive && (
@@ -413,7 +413,6 @@ export default function AuctionDetailPage() {
                 </div>
               )}
 
-            </div>
           </div>
         </div>
 
