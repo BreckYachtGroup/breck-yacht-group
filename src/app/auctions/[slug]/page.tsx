@@ -550,7 +550,7 @@ export default function AuctionDetailPage() {
         </div>{/* end sticky */}
       </div>{/* end right panel */}
     </div>{/* end flex wrapper */}
-  </div>{/* end outer container */}
+  </div>
   )
 }
 
