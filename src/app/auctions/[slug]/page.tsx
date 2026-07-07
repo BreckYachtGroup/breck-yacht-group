@@ -191,12 +191,14 @@ export default function AuctionDetailPage() {
     <div style={{ backgroundColor: '#0c0c0c' }} className="min-h-screen text-white">
 
       {/* Back */}
-      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4 xl:pr-[416px]">
+      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4">
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
-      {/* Left: scrolls with page; padded right on xl to clear the fixed panel */}
-      <div className="xl:pr-[400px]">
+      {/* Two-column grid — no items-start so right cell stretches to full left-column height */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px]">
+
+        {/* Left: scrolls with page */}
         <div className="px-8 py-12 space-y-8">
 
             {/* Gallery */}
@@ -335,22 +337,13 @@ export default function AuctionDetailPage() {
             </div>
 
           </div>
-      </div>{/* end xl:pr-[400px] wrapper */}
+        </div>{/* end left column */}
 
-      {/* ── Right: fixed panel, truly never moves ────────────────────── */}
-      <div className="hidden xl:block"
-        style={{
-          position: 'fixed',
-          top: '64px',
-          right: '0',
-          width: '400px',
-          height: 'calc(100vh - 64px)',
-          backgroundColor: '#0c0c0c',
-          borderLeft: '1px solid #1a1a1a',
-          overflowY: 'auto',
-          zIndex: 10,
-        }}>
-          <div className="p-6 space-y-5">
+        {/* Right: full-height column — sticky panel lives inside so it stops at grid bottom (before footer) */}
+        <div className="hidden xl:block"
+          style={{ backgroundColor: '#0c0c0c', borderLeft: '1px solid #1a1a1a' }}>
+          <div className="sticky overflow-y-auto p-6 space-y-5"
+            style={{ top: '64px', height: 'calc(100vh - 64px)' }}>
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} />}
               {!isActive && (
@@ -422,9 +415,10 @@ export default function AuctionDetailPage() {
                 </div>
               )}
 
-          </div>
-        </div>{/* end fixed panel */}
+          </div>{/* end sticky inner */}
+        </div>{/* end right column */}
 
+      </div>{/* end grid */}
     </div>
   )
 }
