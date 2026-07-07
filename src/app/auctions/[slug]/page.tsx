@@ -92,8 +92,9 @@ export default function AuctionDetailPage() {
     function onScroll() {
       const footer = document.querySelector('footer')
       if (!footer) return
+      // How many px of footer are visible from viewport bottom
       const gap = window.innerHeight - footer.getBoundingClientRect().top
-      setPanelBottom(gap > 0 ? gap : 0)
+      setPanelBottom(Math.max(0, gap))
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
@@ -355,13 +356,14 @@ export default function AuctionDetailPage() {
       <div className="hidden xl:block"
         style={{
           position: 'fixed',
-          top: '64px',
+          top: '72px',
           right: '0',
           width: '400px',
           bottom: `${panelBottom}px`,
           backgroundColor: '#0c0c0c',
           borderLeft: '1px solid #1a1a1a',
-          overflowY: 'auto',
+          overflow: 'hidden',
+          transition: 'bottom 0.15s ease-out',
           zIndex: 10,
         }}><div className="p-4 space-y-3">
 
