@@ -30,7 +30,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('auction_comments')
-    .select('id, user_id, display_name, body, created_at')
+    .select('id, user_id, display_name, body, image_url, created_at')
     .eq('auction_id', auction.id)
     .order('created_at', { ascending: true })
 
@@ -47,9 +47,11 @@ export async function POST(
 
   const { slug } = await params
   const body = await req.json().catch(() => ({}))
-  const text = (body.body ?? '').trim()
+  const text     = (body.body ?? '').trim()
+  // Optional image URL — must be from our own Supabase storage bucket
+  const imageUrl = typeof body.image_url === 'string' && body.image_url.includes('/auction-images/') ? body.image_url : null
 
-  if (!text) return NextResponse.json({ error: 'Comment cannot be empty.' }, { status: 400 })
+  if (!text && !imageUrl) return NextResponse.json({ error: 'Comment cannot be empty.' }, { status: 400 })
   if (text.length > 1000) return NextResponse.json({ error: 'Comment too long (max 1000 characters).' }, { status: 400 })
 
   // Look up auction
@@ -77,8 +79,9 @@ export async function POST(
       user_id:      user.id,
       display_name: displayName,
       body:         text,
+      image_url:    imageUrl,
     })
-    .select('id, user_id, display_name, body, created_at')
+    .select('id, user_id, display_name, body, image_url, created_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

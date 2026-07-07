@@ -16,7 +16,7 @@ type Auction = {
   extended_count: number
 }
 type Bid = { id: string; amount: number; created_at: string; bidder_id: string }
-type Comment = { id: string; user_id: string; display_name: string; body: string; created_at: string }
+type Comment = { id: string; user_id: string; display_name: string; body: string; image_url: string | null; created_at: string }
 type FeedItem =
   | { kind: 'bid';     data: Bid }
   | { kind: 'comment'; data: Comment }
@@ -68,6 +68,10 @@ export default function AuctionDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [commentError, setCommentError] = useState('')
   const [commentSubmitting, setCommentSubmitting] = useState(false)
+  const [commentImage,    setCommentImage]    = useState<File | null>(null)
+  const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null)
+  const [commentImageUploading, setCommentImageUploading] = useState(false)
+  const commentFileRef = useRef<HTMLInputElement>(null)
 
   // ── Fetch auction + bids + comments ───────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -133,24 +137,51 @@ export default function AuctionDetailPage() {
     fetchAll()
   }
 
-  // ── Post comment ───────────────────────────────────────────────────────────
+  // ── Post comment (with optional image) ────────────────────────────────────
   async function handleComment(e: React.FormEvent) {
     e.preventDefault()
     setCommentError('')
     if (!user) { router.push('/account/login'); return }
-    if (!commentText.trim()) return
+    if (!commentText.trim() && !commentImage) return
     setCommentSubmitting(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { setCommentError('Please sign in again.'); setCommentSubmitting(false); return }
+
+    // Upload image first if attached
+    let uploadedUrl: string | null = null
+    if (commentImage) {
+      setCommentImageUploading(true)
+      const form = new FormData()
+      form.append('file', commentImage)
+      const upRes = await fetch('/api/auctions/comment-upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      })
+      setCommentImageUploading(false)
+      if (!upRes.ok) {
+        const upData = await upRes.json()
+        setCommentError(upData.error ?? 'Image upload failed.')
+        setCommentSubmitting(false)
+        return
+      }
+      const upData = await upRes.json()
+      uploadedUrl = upData.url
+    }
+
     const res = await fetch(`/api/auctions/${slug}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ body: commentText.trim() }),
+      body: JSON.stringify({ body: commentText.trim(), image_url: uploadedUrl }),
     })
     const d = await res.json()
     setCommentSubmitting(false)
     if (!res.ok) { setCommentError(d.error ?? 'Failed to post.'); return }
+    // Reset form
     setCommentText('')
+    setCommentImage(null)
+    setCommentImagePreview(null)
+    if (commentFileRef.current) commentFileRef.current.value = ''
   }
 
   // ── Delete comment ─────────────────────────────────────────────────────────
@@ -297,14 +328,56 @@ export default function AuctionDetailPage() {
                       className="w-full px-4 py-3 text-white text-sm bg-transparent border focus:outline-none focus:border-yellow-500/50 resize-none leading-relaxed"
                       style={{ backgroundColor: '#1a1a1a', borderColor: '#333' }}
                     />
+
+                    {/* Image attachment */}
+                    <div className="flex items-center gap-3">
+                      <button type="button"
+                        onClick={() => commentFileRef.current?.click()}
+                        className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white/70 transition-colors"
+                        style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M3.75 3.75h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6a2.25 2.25 0 012.25-2.25z" />
+                        </svg>
+                        Attach Photo
+                      </button>
+                      {commentImage && (
+                        <div className="flex items-center gap-2">
+                          {commentImagePreview && (
+                            <img src={commentImagePreview} alt="preview"
+                              className="w-12 h-10 object-cover" style={{ border: '1px solid #333' }} />
+                          )}
+                          <span className="text-xs text-white/40 truncate max-w-[140px]">{commentImage.name}</span>
+                          <button type="button" onClick={() => {
+                            setCommentImage(null); setCommentImagePreview(null)
+                            if (commentFileRef.current) commentFileRef.current.value = ''
+                          }} className="text-white/30 hover:text-red-400 text-xs">✕</button>
+                        </div>
+                      )}
+                      <input ref={commentFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0] ?? null
+                          setCommentImage(f)
+                          if (f) {
+                            const reader = new FileReader()
+                            reader.onload = ev => setCommentImagePreview(ev.target?.result as string)
+                            reader.readAsDataURL(f)
+                          } else {
+                            setCommentImagePreview(null)
+                          }
+                        }}
+                      />
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-white/20">{commentText.length}/1000</span>
                       {commentError && <p className="text-red-400 text-xs">{commentError}</p>}
                     </div>
-                    <button type="submit" disabled={commentSubmitting || !commentText.trim()}
+                    <button type="submit"
+                      disabled={commentSubmitting || commentImageUploading || (!commentText.trim() && !commentImage)}
                       className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-40"
                       style={{ backgroundColor: '#0c1f3f', border: '1px solid #c9a84c', color: '#c9a84c' }}>
-                      {commentSubmitting ? 'Posting…' : 'Post Comment'}
+                      {commentImageUploading ? 'Uploading image…' : commentSubmitting ? 'Posting…' : 'Post Comment'}
                     </button>
                   </form>
                 ) : (
@@ -453,6 +526,8 @@ function BidFeedItem({ bid, isLatest }: { bid: Bid; isLatest: boolean }) {
 function CommentFeedItem({ comment, isOwn, onDelete }: {
   comment: Comment; isOwn: boolean; onDelete: (id: string) => void
 }) {
+  const [imgOpen, setImgOpen] = useState(false)
+
   return (
     <div className="px-5 py-4 group" style={{ backgroundColor: '#111', borderBottom: '1px solid #1a1a1a' }}>
       <div className="flex items-start gap-3">
@@ -471,9 +546,33 @@ function CommentFeedItem({ comment, isOwn, onDelete }: {
               </button>
             )}
           </div>
-          <p className="text-white/70 text-sm leading-relaxed break-words">{comment.body}</p>
+          {comment.body && (
+            <p className="text-white/70 text-sm leading-relaxed break-words">{comment.body}</p>
+          )}
+          {comment.image_url && (
+            <div className="mt-3">
+              <img
+                src={comment.image_url}
+                alt="comment attachment"
+                loading="lazy"
+                onClick={() => setImgOpen(true)}
+                className="max-h-64 object-cover cursor-zoom-in"
+                style={{ border: '1px solid #2a2a2a', maxWidth: '100%' }}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Lightbox */}
+      {imgOpen && comment.image_url && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          onClick={() => setImgOpen(false)}>
+          <img src={comment.image_url} alt="full size" className="max-w-full max-h-full object-contain" />
+          <button className="absolute top-4 right-6 text-white/50 hover:text-white text-3xl leading-none">✕</button>
+        </div>
+      )}
     </div>
   )
 }
