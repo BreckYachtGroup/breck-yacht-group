@@ -1,7 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 type Auction = {
   id: string; slug: string; title: string; make: string; model: string
@@ -54,8 +57,11 @@ function Countdown({ endsAt }: { endsAt: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AuctionsPage() {
-  const [auctions, setAuctions] = useState<Auction[]>([])
-  const [loading,  setLoading]  = useState(true)
+  const { user }   = useAuth()
+  const router     = useRouter()
+  const [auctions,  setAuctions]  = useState<Auction[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [watchlist, setWatchlist] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetch('/api/auctions')
@@ -63,6 +69,49 @@ export default function AuctionsPage() {
       .then(d => { setAuctions(d.auctions ?? []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
+
+  // Fetch user's watchlist once auctions are loaded
+  useEffect(() => {
+    if (!user || auctions.length === 0) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      Promise.all(
+        auctions.map(a =>
+          fetch(`/api/auctions/${a.slug}/watch`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).then(r => r.json()).then(d => d.watching ? a.id : null)
+        )
+      ).then(results => {
+        setWatchlist(new Set(results.filter(Boolean) as string[]))
+      }).catch(() => {})
+    })
+  }, [user, auctions])
+
+  const toggleWatch = useCallback(async (auction: Auction, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) { router.push('/account/login'); return }
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const isWatching = watchlist.has(auction.id)
+    // Optimistic update
+    setWatchlist(prev => {
+      const next = new Set(prev)
+      isWatching ? next.delete(auction.id) : next.add(auction.id)
+      return next
+    })
+    await fetch(`/api/auctions/${auction.slug}/watch`, {
+      method: isWatching ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).catch(() => {
+      // Revert on error
+      setWatchlist(prev => {
+        const next = new Set(prev)
+        isWatching ? next.add(auction.id) : next.delete(auction.id)
+        return next
+      })
+    })
+  }, [user, watchlist, router])
 
   const active = auctions.filter(a => a.status === 'active')
   const ended  = auctions.filter(a => a.status !== 'active')
@@ -104,7 +153,6 @@ export default function AuctionsPage() {
           </div>
         ) : (
           <>
-            {/* Active auctions */}
             {active.length > 0 && (
               <section className="mb-16">
                 <h2 className="text-xs uppercase tracking-[0.3em] text-white/40 mb-8">
@@ -112,21 +160,22 @@ export default function AuctionsPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {active.map(a => (
-                    <AuctionCard key={a.id} auction={a} />
+                    <AuctionCard key={a.id} auction={a}
+                      watching={watchlist.has(a.id)}
+                      onWatch={e => toggleWatch(a, e)} />
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Ended auctions */}
             {ended.length > 0 && (
               <section>
-                <h2 className="text-xs uppercase tracking-[0.3em] text-white/30 mb-8">
-                  Ended
-                </h2>
+                <h2 className="text-xs uppercase tracking-[0.3em] text-white/30 mb-8">Ended</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 opacity-60">
                   {ended.map(a => (
-                    <AuctionCard key={a.id} auction={a} />
+                    <AuctionCard key={a.id} auction={a}
+                      watching={watchlist.has(a.id)}
+                      onWatch={e => toggleWatch(a, e)} />
                   ))}
                 </div>
               </section>
@@ -140,7 +189,11 @@ export default function AuctionsPage() {
 }
 
 // ── Auction card ──────────────────────────────────────────────────────────────
-function AuctionCard({ auction }: { auction: Auction }) {
+function AuctionCard({ auction, watching, onWatch }: {
+  auction: Auction
+  watching: boolean
+  onWatch: (e: React.MouseEvent) => void
+}) {
   return (
     <Link
       href={`/auctions/${auction.slug}`}
@@ -164,11 +217,25 @@ function AuctionCard({ auction }: { auction: Auction }) {
 
         {/* Status badge */}
         {auction.status === 'active' && (
-          <span className="absolute top-3 left-3 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white"
+          <span className="absolute top-3 left-3 px-2 py-1 text-xs font-bold uppercase tracking-wider"
             style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
             Live
           </span>
         )}
+
+        {/* Watch button */}
+        <button
+          onClick={onWatch}
+          className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full transition-all"
+          style={{
+            backgroundColor: watching ? 'rgba(201,168,76,0.9)' : 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(4px)',
+          }}
+          aria-label={watching ? 'Remove from watchlist' : 'Add to watchlist'}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill={watching ? '#0c1f3f' : 'none'} viewBox="0 0 24 24" stroke={watching ? '#0c1f3f' : 'white'} strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
+        </button>
       </div>
 
       {/* Info */}
