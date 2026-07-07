@@ -117,9 +117,14 @@ export default function AuctionDetailPage() {
     return () => { supabase.removeChannel(channel) }
   }, [auction?.id])
 
-  // Scroll feed to bottom when new items arrive
+  // Scroll feed to bottom only when NEW items arrive (not on initial load)
+  const feedLengthRef = useRef<number | null>(null)
   useEffect(() => {
-    feedEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const total = bids.length + comments.length
+    if (feedLengthRef.current !== null && total > feedLengthRef.current) {
+      feedEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    feedLengthRef.current = total
   }, [bids.length, comments.length])
 
   // ── Place bid ──────────────────────────────────────────────────────────────
