@@ -172,7 +172,38 @@ export async function sendWatchlistAlert({
   })
 }
 
-// ── 5. Newsletter welcome ─────────────────────────────────────────────────────
+// ── 5. Comment flag admin alert ───────────────────────────────────────────────
+export async function sendFlagAlertEmail({
+  auctionTitle, auctionSlug, commentAuthor, commentBody, flaggedBy, flagCount,
+}: {
+  auctionTitle: string; auctionSlug: string
+  commentAuthor: string; commentBody: string
+  flaggedBy: string; flagCount: number
+}) {
+  return resend.emails.send({
+    from: FROM,
+    to:   'austin@breckyachtgroup.com',
+    subject: `⚑ Comment flagged on "${auctionTitle}" (${flagCount} flag${flagCount !== 1 ? 's' : ''})`,
+    html: base(`
+      <p style="margin:0 0 8px;color:#c0392b;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Comment Flagged as Not Constructive</p>
+      <h2 style="margin:0 0 24px;color:#0c1f3f;font-size:22px;">${auctionTitle}</h2>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+        <tr><td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Author</td>
+            <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#333;">${commentAuthor}</td></tr>
+        <tr><td style="padding:12px 16px;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Comment</td>
+            <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#333;font-style:italic;">"${commentBody}"</td></tr>
+        <tr><td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Flagged by</td>
+            <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#333;">${flaggedBy}</td></tr>
+        <tr><td style="padding:12px 16px;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Total Flags</td>
+            <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#c0392b;font-weight:bold;">${flagCount}</td></tr>
+      </table>
+      <p style="color:#555;font-size:14px;line-height:1.7;">Review the comment and delete it from the auction page if it violates community standards.</p>
+      ${goldBtn(`${SITE}/auctions/${auctionSlug}`, 'Review Auction →')}
+    `),
+  })
+}
+
+// ── 6. Newsletter welcome ─────────────────────────────────────────────────────
 export async function sendNewsletterWelcome({ to }: { to: string }) {
   return resend.emails.send({
     from: FROM, to,

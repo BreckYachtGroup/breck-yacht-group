@@ -85,10 +85,23 @@ export async function POST(
     newEndsAt = new Date(endsAt + SNIPE_EXTEND).toISOString()
   }
 
+  // ── Look up bidder's username ──────────────────────────────────────────────
+  const { data: bidderProfile } = await supabaseAdmin
+    .from('buyer_profiles')
+    .select('username, name')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  // Use username if set, fall back to name, then email prefix
+  const bidderUsername = bidderProfile?.username
+    || bidderProfile?.name?.split(' ')[0]
+    || user.email?.split('@')[0]
+    || 'Bidder'
+
   // ── Record the bid ─────────────────────────────────────────────────────────
   const { error: bidError } = await supabaseAdmin
     .from('auction_bids')
-    .insert({ auction_id: auction.id, bidder_id: user.id, amount })
+    .insert({ auction_id: auction.id, bidder_id: user.id, amount, bidder_username: bidderUsername })
 
   if (bidError) return NextResponse.json({ error: bidError.message }, { status: 500 })
 

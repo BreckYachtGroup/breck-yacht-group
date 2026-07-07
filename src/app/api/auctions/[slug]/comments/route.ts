@@ -63,14 +63,14 @@ export async function POST(
 
   if (!auction) return NextResponse.json({ error: 'Auction not found.' }, { status: 404 })
 
-  // Get display name from buyer_profiles, fall back to email prefix
+  // Use username if set, fall back to name, then email prefix
   const { data: profile } = await supabaseAdmin
     .from('buyer_profiles')
-    .select('name')
+    .select('username, name')
     .eq('id', user.id)
     .maybeSingle()
 
-  const displayName = profile?.name || (user.email?.split('@')[0] ?? 'Bidder')
+  const displayName = profile?.username || profile?.name || (user.email?.split('@')[0] ?? 'User')
 
   const { data, error } = await supabaseAdmin
     .from('auction_comments')

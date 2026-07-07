@@ -27,7 +27,7 @@ export async function GET(
   // Fetch bid history (most recent first, show bidder email partially masked)
   const { data: bids } = await supabaseAdmin
     .from('auction_bids')
-    .select('id, amount, created_at, bidder_id')
+    .select('id, amount, created_at, bidder_id, bidder_username')
     .eq('auction_id', auction.id)
     .order('created_at', { ascending: false })
     .limit(50)

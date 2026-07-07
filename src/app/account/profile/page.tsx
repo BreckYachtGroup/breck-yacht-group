@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
-type Profile = { name: string; phone: string; looking_for: string; timeline: string }
+type Profile = { name: string; phone: string; looking_for: string; timeline: string; username: string }
 
 const TIMELINES = [
   'Just browsing',
@@ -43,7 +43,7 @@ export default function AccountProfilePage() {
       })
         .then(r => r.json())
         .then(d => {
-          const p = d.profile ?? { name: '', phone: '', looking_for: '', timeline: '' }
+          const p = d.profile ?? { name: '', phone: '', looking_for: '', timeline: '', username: '' }
           setProfile(p)
           setForm(p)
           setLoading(false)
@@ -143,6 +143,21 @@ export default function AccountProfilePage() {
                   className={inputCls} />
               </div>
               <div>
+                <label className={labelCls}>
+                  Auction Username
+                  <span className="ml-1 font-normal normal-case tracking-normal text-gray-400">(shown on bids &amp; comments)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">@</span>
+                  <input type="text" value={form.username ?? ''}
+                    onChange={e => set('username', e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                    placeholder="e.g. MarlinHunter305"
+                    maxLength={20}
+                    className={`${inputCls} pl-7`} />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">3–20 characters. Letters, numbers, and underscores only.</p>
+              </div>
+              <div>
                 <label className={labelCls}>Email</label>
                 <input type="email" value={user?.email ?? ''} disabled
                   className={`${inputCls} opacity-50 cursor-not-allowed`} />
@@ -206,6 +221,13 @@ export default function AccountProfilePage() {
               <div>
                 <p className={labelCls}>Name</p>
                 <p className="font-medium">{profile?.name || <span className="text-gray-400 italic">Not set</span>}</p>
+              </div>
+              <div>
+                <p className={labelCls}>Auction Username</p>
+                {profile?.username
+                  ? <p className="font-medium text-gray-800">@{profile.username}</p>
+                  : <p className="text-sm text-amber-600 font-medium">⚠ No username set — your email prefix will be shown on bids and comments.</p>
+                }
               </div>
               <div>
                 <p className={labelCls}>Phone</p>

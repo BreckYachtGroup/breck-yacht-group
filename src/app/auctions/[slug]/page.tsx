@@ -15,7 +15,7 @@ type Auction = {
   current_bid: number; current_bidder_id: string | null; bid_count: number
   extended_count: number
 }
-type Bid = { id: string; amount: number; created_at: string; bidder_id: string }
+type Bid = { id: string; amount: number; created_at: string; bidder_id: string; bidder_username: string | null }
 type Comment = { id: string; user_id: string; display_name: string; body: string; image_url: string | null; like_count: number; flag_count: number; created_at: string }
 type FeedItem =
   | { kind: 'bid';     data: Bid }
@@ -617,7 +617,7 @@ function BidFeedItem({ bid, isLatest }: { bid: Bid; isLatest: boolean }) {
         <span className="text-xs font-bold px-2 py-0.5 uppercase tracking-wider flex-shrink-0"
           style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>Bid</span>
         <span className="font-bold text-white">{fmt(bid.amount)}</span>
-        <span className="text-white/30 text-sm">by {maskBidder(bid.bidder_id)}</span>
+        <span className="text-white/30 text-sm">by @{bid.bidder_username ?? maskBidder(bid.bidder_id)}</span>
         {isLatest && (
           <span className="text-xs text-green-400 font-semibold">High Bid</span>
         )}
@@ -678,8 +678,12 @@ function CommentFeedItem({ comment, isOwn, onDelete, liked, onLike, flagged, onF
 
             {/* Thumbs up */}
             <button onClick={onLike}
-              className="flex items-center gap-1.5 text-xs transition-colors hover:opacity-80"
-              style={{ color: liked ? '#c9a84c' : 'rgba(255,255,255,0.25)' }}
+              className="flex items-center gap-1.5 text-xs transition-all hover:opacity-90 px-2 py-1 rounded"
+              style={{
+                color:           liked ? '#c9a84c' : 'rgba(255,255,255,0.55)',
+                backgroundColor: liked ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.06)',
+                border:          `1px solid ${liked ? 'rgba(201,168,76,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              }}
               aria-label="Like comment">
               {/* Thumbs up icon */}
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={liked ? 'currentColor' : 'none'}

@@ -39,10 +39,30 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, phone, looking_for, timeline } = await req.json()
+  const { name, phone, looking_for, timeline, username } = await req.json()
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  }
+
+  // Validate username: 3–20 chars, alphanumeric + underscores only
+  if (username !== undefined) {
+    const u = username.trim()
+    if (u && !/^[a-zA-Z0-9_]{3,20}$/.test(u)) {
+      return NextResponse.json({ error: 'Username must be 3–20 characters: letters, numbers, and underscores only.' }, { status: 400 })
+    }
+    // Check uniqueness (exclude current user)
+    if (u) {
+      const { data: existing } = await supabaseAdmin
+        .from('buyer_profiles')
+        .select('id')
+        .eq('username', u)
+        .neq('id', user.id)
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({ error: 'That username is already taken.' }, { status: 409 })
+      }
+    }
   }
 
   const { error } = await supabaseAdmin
@@ -50,9 +70,10 @@ export async function POST(req: NextRequest) {
     .upsert({
       id:          user.id,
       name:        name.trim(),
-      phone:       phone?.trim() || null,
+      phone:       phone?.trim()       || null,
       looking_for: looking_for?.trim() || null,
-      timeline:    timeline?.trim() || null,
+      timeline:    timeline?.trim()    || null,
+      ...(username !== undefined ? { username: username.trim() || null } : {}),
     })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
