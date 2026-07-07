@@ -336,7 +336,6 @@ export default function AuctionDetailPage() {
               )}
             </div>
 
-          </div>
         </div>{/* end left column */}
 
         {/* Right: full-height column — sticky panel lives inside so it stops at grid bottom (before footer) */}
