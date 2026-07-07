@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -53,7 +53,6 @@ export default function AuctionDetailPage() {
   const { slug }   = useParams<{ slug: string }>()
   const { user }   = useAuth()
   const router     = useRouter()
-  const supabase   = createClientComponentClient()
 
   const [auction,    setAuction]    = useState<Auction | null>(null)
   const [bids,       setBids]       = useState<Bid[]>([])
