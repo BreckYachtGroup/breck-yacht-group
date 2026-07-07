@@ -55,7 +55,6 @@ export default function AuctionDetailPage() {
   const { user }   = useAuth()
   const router     = useRouter()
 
-  const [panelBottom, setPanelBottom] = useState(0)
   const [auction,    setAuction]    = useState<Auction | null>(null)
   const [bids,       setBids]       = useState<Bid[]>([])
   const [comments,   setComments]   = useState<Comment[]>([])
@@ -107,12 +106,6 @@ export default function AuctionDetailPage() {
 
   // ── Reset scroll to top on load (prevent browser scroll restoration) ──────
   useEffect(() => { window.scrollTo(0, 0) }, [])
-
-  // ── Measure footer height once — panel bottom stops above footer ──────────
-  useEffect(() => {
-    const footer = document.querySelector('footer')
-    if (footer) setPanelBottom(footer.getBoundingClientRect().height)
-  }, [])
 
   // ── Supabase Realtime ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -268,8 +261,9 @@ export default function AuctionDetailPage() {
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
-      {/* Left: scrolls freely; right padding reserves space for the fixed panel on xl */}
-      <div className="xl:pr-[400px]">
+      {/* Two-column flex layout — left scrolls, right column stretches so sticky works */}
+      <div className="xl:flex xl:flex-row">
+        <div className="xl:flex-1 xl:min-w-0">
         <div className="px-8 py-12 space-y-8">
 
             {/* Gallery */}
@@ -451,19 +445,11 @@ export default function AuctionDetailPage() {
         </div>
       </div>{/* end left wrapper */}
 
-      {/* Right: fixed panel — scroll listener shrinks it up as footer enters viewport */}
-      <div className="hidden xl:block"
-        style={{
-          position: 'fixed',
-          top: '124px',       // nav (72px) + back bar (52px)
-          right: '0',
-          width: '400px',
-          bottom: `${panelBottom}px`,
-          backgroundColor: '#0c0c0c',
-          borderLeft: '1px solid #1a1a1a',
-          overflowY: 'auto',
-          zIndex: 10,
-        }}><div className="p-4 space-y-3">
+      {/* Right: sticky panel — outer div stretches to left-column height; inner sticks at top */}
+      <div className="hidden xl:block xl:w-[400px] flex-shrink-0"
+        style={{ backgroundColor: '#0c0c0c', borderLeft: '1px solid #1a1a1a', position: 'relative' }}>
+        <div style={{ position: 'sticky', top: '124px' }}>
+        <div className="p-4 space-y-3">
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} onEnded={triggerProcessEnd} />}
               {!isActive && (
@@ -560,9 +546,11 @@ export default function AuctionDetailPage() {
                 </div>
               )}
 
-          </div>{/* end p-6 */}
-      </div>{/* end fixed panel */}
-    </div>
+          </div>{/* end panel content */}
+        </div>{/* end sticky */}
+      </div>{/* end right panel */}
+    </div>{/* end flex wrapper */}
+  </div>{/* end outer container */}
   )
 }
 
