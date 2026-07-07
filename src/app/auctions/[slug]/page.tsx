@@ -387,6 +387,107 @@ export default function AuctionDetailPage() {
               </div>
             )}
 
+            {/* ── Mobile bid panel (hidden on xl — sidebar handles it) ── */}
+            <div className="xl:hidden space-y-3" style={{ borderTop: '1px solid #1a1a1a', paddingTop: '32px' }}>
+
+              {isActive
+                ? <CountdownBlock endsAt={auction.ends_at} onEnded={triggerProcessEnd} />
+                : (
+                  <div className="py-4 text-center" style={{ backgroundColor: '#1a1a1a' }}>
+                    <span className="text-white/40 text-sm uppercase tracking-widest">
+                      {auction.status === 'sold' ? 'Sold' : 'Auction Ended'}
+                    </span>
+                  </div>
+                )
+              }
+
+              <div className="p-4" style={{ backgroundColor: '#111' }}>
+                <p className="text-xs text-white/30 uppercase tracking-wider mb-1">
+                  {auction.bid_count > 0 ? 'Current Bid' : 'Starting Bid'}
+                </p>
+                <p className="text-3xl font-bold mb-1" style={{ color: '#c9a84c' }}>
+                  {fmt(auction.current_bid || auction.starting_bid)}
+                </p>
+                {auction.bid_count > 0 && (
+                  <p className="text-white/30 text-xs">{auction.bid_count} bid{auction.bid_count !== 1 ? 's' : ''}</p>
+                )}
+                {isWinner && isActive && (
+                  <p className="text-green-400 text-xs mt-1 font-semibold uppercase tracking-wider">✓ You are the highest bidder</p>
+                )}
+              </div>
+
+              {/* Watch */}
+              <button onClick={handleWatch} disabled={watchLoading}
+                className="w-full py-2 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                style={{
+                  backgroundColor: watching ? 'rgba(201,168,76,0.15)' : 'transparent',
+                  border: `1px solid ${watching ? '#c9a84c' : '#333'}`,
+                  color: watching ? '#c9a84c' : 'rgba(255,255,255,0.3)',
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={watching ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+                {watching ? 'Watching' : 'Watch This Auction'}
+              </button>
+
+              {isActive && (
+                <div className="p-4" style={{ backgroundColor: '#111' }}>
+                  {user ? (
+                    <form onSubmit={handleBid} className="space-y-3">
+                      <div>
+                        <label className="text-xs text-white/40 uppercase tracking-wider mb-1 block">
+                          Your Bid (min {fmt(minBid)})
+                        </label>
+                        <div className="flex">
+                          <span className="flex items-center px-3 text-white/40 text-sm"
+                            style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRight: 0 }}>$</span>
+                          <input type="number" min={minBid} step={100} value={bidAmount}
+                            onChange={e => { setBidAmount(e.target.value); setBidError(''); setBidSuccess('') }}
+                            placeholder={minBid.toString()}
+                            className="flex-1 px-3 py-2 text-white text-base bg-transparent focus:outline-none"
+                            style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} required />
+                        </div>
+                      </div>
+                      {bidError   && <p className="text-red-400 text-xs">{bidError}</p>}
+                      {bidSuccess && <p className="text-green-400 text-xs">{bidSuccess}</p>}
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)}
+                          className="mt-0.5 flex-shrink-0" required />
+                        <span className="text-xs text-white/30 leading-snug">
+                          I agree to the{' '}
+                          <a href="/auctions/terms" target="_blank" className="underline hover:text-white/60" style={{ color: '#c9a84c' }}>
+                            auction terms &amp; conditions
+                          </a>
+                          . All bids are binding.
+                        </span>
+                      </label>
+                      <button type="submit" disabled={submitting || !termsAgreed}
+                        className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-50"
+                        style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
+                        {submitting ? 'Placing Bid…' : 'Place Bid'}
+                      </button>
+                      <p className="text-xs text-white/25 text-center leading-snug">
+                        Bids in the final 3 minutes reset the timer to 3 minutes.
+                      </p>
+                    </form>
+                  ) : (
+                    <div className="text-center space-y-3">
+                      <p className="text-white/50 text-sm">Sign in to place a bid</p>
+                      <a href="/account/login"
+                        className="block py-2 text-sm font-bold uppercase tracking-wider text-center"
+                        style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
+                        Sign In to Bid
+                      </a>
+                      <p className="text-white/30 text-xs">
+                        No account?{' '}
+                        <a href="/account/signup" className="underline" style={{ color: '#c9a84c' }}>Register free</a>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* ── Activity & Discussion (inside left column) ──────────── */}
             <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '48px' }}>
               <div className="flex items-baseline gap-4 mb-8">
