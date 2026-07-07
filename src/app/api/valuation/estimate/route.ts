@@ -15,6 +15,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { calcEngineResidualValue, getBaselineEngineValue } from '@/lib/engineValues'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createHash } from 'crypto'
 
 const PROXY_URL = process.env.PROXY_URL ?? 'http://207.246.72.35:3001'
 
@@ -379,6 +381,29 @@ export async function POST(req: NextRequest) {
       topComps.length >= 8 && avgScore >= 45 ? 'high'
       : topComps.length >= 4 && avgScore >= 25 ? 'medium'
       : 'low'
+
+    // ── Log submission (fire-and-forget — never block the response) ──────────
+    const ipHash = createHash('sha256').update(ip).digest('hex')
+    supabaseAdmin.from('valuation_submissions').insert({
+      year:         input.year,
+      make:         input.make,
+      model:        input.model ?? null,
+      length_ft:    input.length_ft,
+      condition:    input.condition,
+      hours:        input.hours ?? null,
+      state:        input.state ?? null,
+      engine_count: input.engine_count ?? null,
+      engine_make:  input.engine_make ?? null,
+      engine_model: input.engine_model ?? null,
+      val_low:      low,
+      val_mid:      mid,
+      val_high:     high,
+      confidence,
+      comp_count:   topComps.length,
+      ip_hash:      ipHash,
+    }).then(({ error }) => {
+      if (error) console.error('[valuation/log]', error.message)
+    })
 
     return NextResponse.json({
       low,
