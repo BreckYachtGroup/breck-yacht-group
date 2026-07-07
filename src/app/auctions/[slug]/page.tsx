@@ -72,6 +72,10 @@ export default function AuctionDetailPage() {
   const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null)
   const [commentImageUploading, setCommentImageUploading] = useState(false)
   const commentFileRef = useRef<HTMLInputElement>(null)
+  const [termsAgreed,  setTermsAgreed]  = useState(false)
+  const [watching,     setWatching]     = useState(false)
+  const [watchLoading, setWatchLoading] = useState(false)
+  const endProcessedRef = useRef(false)
 
   // ── Fetch auction + bids + comments ───────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -89,6 +93,17 @@ export default function AuctionDetailPage() {
   }, [slug])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  // ── Fetch watchlist status ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      fetch(`/api/auctions/${slug}/watch`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).then(r => r.json()).then(d => setWatching(d.watching ?? false)).catch(() => {})
+    })
+  }, [slug, user])
 
   // ── Reset scroll to top on load (prevent browser scroll restoration) ──────
   useEffect(() => { window.scrollTo(0, 0) }, [])
@@ -182,6 +197,29 @@ export default function AuctionDetailPage() {
     setCommentImage(null)
     setCommentImagePreview(null)
     if (commentFileRef.current) commentFileRef.current.value = ''
+  }
+
+  // ── Toggle watchlist ───────────────────────────────────────────────────────
+  async function handleWatch() {
+    if (!user) { router.push('/account/login'); return }
+    setWatchLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setWatchLoading(false); return }
+    const method = watching ? 'DELETE' : 'POST'
+    const res = await fetch(`/api/auctions/${slug}/watch`, {
+      method,
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    const d = await res.json()
+    setWatching(d.watching ?? !watching)
+    setWatchLoading(false)
+  }
+
+  // ── Process auction end (called once when countdown hits zero) ─────────────
+  function triggerProcessEnd() {
+    if (endProcessedRef.current) return
+    endProcessedRef.current = true
+    fetch(`/api/auctions/${slug}/process-end`, { method: 'POST' }).catch(() => {})
   }
 
   // ── Delete comment ─────────────────────────────────────────────────────────
@@ -427,7 +465,7 @@ export default function AuctionDetailPage() {
           zIndex: 10,
         }}><div className="p-4 space-y-3">
 
-              {isActive && <CountdownBlock endsAt={auction.ends_at} />}
+              {isActive && <CountdownBlock endsAt={auction.ends_at} onEnded={triggerProcessEnd} />}
               {!isActive && (
                 <div className="py-4 text-center" style={{ backgroundColor: '#1a1a1a' }}>
                   <span className="text-white/40 text-sm uppercase tracking-widest">
@@ -451,6 +489,20 @@ export default function AuctionDetailPage() {
                 )}
               </div>
 
+              {/* Watch button */}
+              <button onClick={handleWatch} disabled={watchLoading}
+                className="w-full py-2 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                style={{
+                  backgroundColor: watching ? 'rgba(201,168,76,0.15)' : 'transparent',
+                  border: `1px solid ${watching ? '#c9a84c' : '#333'}`,
+                  color: watching ? '#c9a84c' : 'rgba(255,255,255,0.3)',
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill={watching ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+                {watching ? 'Watching' : 'Watch This Auction'}
+              </button>
+
               {isActive && (
                 <div className="p-4" style={{ backgroundColor: '#111' }}>
                   {user ? (
@@ -471,13 +523,24 @@ export default function AuctionDetailPage() {
                       </div>
                       {bidError   && <p className="text-red-400 text-xs">{bidError}</p>}
                       {bidSuccess && <p className="text-green-400 text-xs">{bidSuccess}</p>}
-                      <button type="submit" disabled={submitting}
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)}
+                          className="mt-0.5 flex-shrink-0" required />
+                        <span className="text-xs text-white/30 leading-snug">
+                          I agree to the{' '}
+                          <a href="/auctions/terms" target="_blank" className="underline hover:text-white/60" style={{ color: '#c9a84c' }}>
+                            auction terms &amp; conditions
+                          </a>
+                          . All bids are binding.
+                        </span>
+                      </label>
+                      <button type="submit" disabled={submitting || !termsAgreed}
                         className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-50"
                         style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
                         {submitting ? 'Placing Bid…' : 'Place Bid'}
                       </button>
                       <p className="text-xs text-white/25 text-center leading-snug">
-                        All bids are binding. Bids placed in the final 3 minutes reset the timer back to 3 minutes.
+                        Bids in the final 3 minutes reset the timer to 3 minutes.
                       </p>
                     </form>
                   ) : (
@@ -578,9 +641,13 @@ function CommentFeedItem({ comment, isOwn, onDelete }: {
 }
 
 // ── Countdown block ───────────────────────────────────────────────────────────
-function CountdownBlock({ endsAt }: { endsAt: string }) {
+function CountdownBlock({ endsAt, onEnded }: { endsAt: string; onEnded?: () => void }) {
   const { days, hours, minutes, seconds, ended, urgent } = useCountdown(endsAt)
   const color = urgent ? '#ef4444' : '#c9a84c'
+
+  useEffect(() => {
+    if (ended && onEnded) onEnded()
+  }, [ended, onEnded])
 
   if (ended) return (
     <div className="py-5 text-center" style={{ backgroundColor: '#1a1a1a' }}>

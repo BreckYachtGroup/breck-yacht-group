@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { sendOutbidEmail } from '@/lib/auction-emails'
 
 const MIN_INCREMENT  = 100             // minimum bid increment in dollars
 const SNIPE_WINDOW   = 3 * 60 * 1000  // trigger if < 3 minutes remain
@@ -106,6 +107,23 @@ export async function POST(
     .eq('id', auction.id)
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+
+  // ── Fire-and-forget outbid email to previous highest bidder ───────────────
+  if (auction.current_bidder_id && auction.current_bidder_id !== user.id) {
+    const { data: { user: prevUser } } = await supabaseAdmin.auth.admin.getUserById(auction.current_bidder_id)
+    if (prevUser?.email) {
+      const prevName = prevUser.user_metadata?.full_name?.split(' ')[0] ?? 'there'
+      sendOutbidEmail({
+        to:          prevUser.email,
+        bidderName:  prevName,
+        auctionTitle: auction.title,
+        auctionSlug:  slug,
+        newBid:       amount,
+        minNextBid:   amount + MIN_INCREMENT,
+        endsAt:       newEndsAt,
+      }).catch(err => console.error('[outbid email]', err))
+    }
+  }
 
   return NextResponse.json({
     success:    true,
