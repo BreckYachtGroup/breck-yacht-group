@@ -363,7 +363,7 @@ export default function AuctionDetailPage() {
           borderLeft: '1px solid #1a1a1a',
           overflowY: 'auto',
           zIndex: 10,
-        }}><div className="p-6 space-y-5">
+        }}><div className="p-4 space-y-3">
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} />}
               {!isActive && (
@@ -374,27 +374,27 @@ export default function AuctionDetailPage() {
                 </div>
               )}
 
-              <div className="p-6" style={{ backgroundColor: '#111' }}>
+              <div className="p-4" style={{ backgroundColor: '#111' }}>
                 <p className="text-xs text-white/30 uppercase tracking-wider mb-1">
                   {auction.bid_count > 0 ? 'Current Bid' : 'Starting Bid'}
                 </p>
-                <p className="text-4xl font-bold mb-1" style={{ color: '#c9a84c' }}>
+                <p className="text-3xl font-bold mb-1" style={{ color: '#c9a84c' }}>
                   {fmt(auction.current_bid || auction.starting_bid)}
                 </p>
                 {auction.bid_count > 0 && (
-                  <p className="text-white/30 text-sm">{auction.bid_count} bid{auction.bid_count !== 1 ? 's' : ''}</p>
+                  <p className="text-white/30 text-xs">{auction.bid_count} bid{auction.bid_count !== 1 ? 's' : ''}</p>
                 )}
                 {isWinner && isActive && (
-                  <p className="text-green-400 text-xs mt-2 font-semibold uppercase tracking-wider">✓ You are the highest bidder</p>
+                  <p className="text-green-400 text-xs mt-1 font-semibold uppercase tracking-wider">✓ You are the highest bidder</p>
                 )}
               </div>
 
               {isActive && (
-                <div className="p-6" style={{ backgroundColor: '#111' }}>
+                <div className="p-4" style={{ backgroundColor: '#111' }}>
                   {user ? (
-                    <form onSubmit={handleBid} className="space-y-4">
+                    <form onSubmit={handleBid} className="space-y-3">
                       <div>
-                        <label className="text-xs text-white/40 uppercase tracking-wider mb-2 block">
+                        <label className="text-xs text-white/40 uppercase tracking-wider mb-1 block">
                           Your Bid (min {fmt(minBid)})
                         </label>
                         <div className="flex">
@@ -403,26 +403,26 @@ export default function AuctionDetailPage() {
                           <input type="number" min={minBid} step={100} value={bidAmount}
                             onChange={e => { setBidAmount(e.target.value); setBidError(''); setBidSuccess('') }}
                             placeholder={minBid.toString()}
-                            className="flex-1 px-4 py-3 text-white text-lg bg-transparent focus:outline-none"
+                            className="flex-1 px-3 py-2 text-white text-base bg-transparent focus:outline-none"
                             style={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} required />
                         </div>
                       </div>
-                      {bidError   && <p className="text-red-400 text-sm">{bidError}</p>}
-                      {bidSuccess && <p className="text-green-400 text-sm">{bidSuccess}</p>}
+                      {bidError   && <p className="text-red-400 text-xs">{bidError}</p>}
+                      {bidSuccess && <p className="text-green-400 text-xs">{bidSuccess}</p>}
                       <button type="submit" disabled={submitting}
-                        className="w-full py-4 text-sm font-bold uppercase tracking-wider disabled:opacity-50"
+                        className="w-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-50"
                         style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
                         {submitting ? 'Placing Bid…' : 'Place Bid'}
                       </button>
-                      <p className="text-xs text-white/25 text-center leading-relaxed">
+                      <p className="text-xs text-white/25 text-center leading-snug">
                         All bids are binding. Bids within the last 5 minutes extend the auction by 5 minutes.
                       </p>
                     </form>
                   ) : (
-                    <div className="text-center space-y-4">
+                    <div className="text-center space-y-3">
                       <p className="text-white/50 text-sm">Sign in to place a bid</p>
                       <a href="/account/login"
-                        className="block py-3 text-sm font-bold uppercase tracking-wider text-center"
+                        className="block py-2 text-sm font-bold uppercase tracking-wider text-center"
                         style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
                         Sign In to Bid
                       </a>
@@ -500,15 +500,15 @@ function CountdownBlock({ endsAt }: { endsAt: string }) {
     </div>
   )
   return (
-    <div className="py-5 px-6" style={{ backgroundColor: urgent ? '#1a0a0a' : '#111' }}>
-      <p className="text-xs text-white/30 uppercase tracking-widest mb-4 text-center">
+    <div className="py-3 px-4" style={{ backgroundColor: urgent ? '#1a0a0a' : '#111' }}>
+      <p className="text-xs text-white/30 uppercase tracking-widest mb-3 text-center">
         {urgent ? '⚡ Anti-snipe active — bids extend the timer' : 'Time Remaining'}
       </p>
-      <div className="flex justify-center gap-6">
+      <div className="flex justify-center gap-4">
         {[['Days', days], ['Hrs', hours], ['Min', minutes], ['Sec', seconds]].map(([label, val]) => (
           <div key={label as string} className="text-center">
-            <div className="text-4xl font-bold tabular-nums" style={{ color }}>{String(val).padStart(2, '0')}</div>
-            <div className="text-xs text-white/30 uppercase tracking-wider mt-1">{label}</div>
+            <div className="text-3xl font-bold tabular-nums" style={{ color }}>{String(val).padStart(2, '0')}</div>
+            <div className="text-xs text-white/30 uppercase tracking-wider mt-0.5">{label}</div>
           </div>
         ))}
       </div>
