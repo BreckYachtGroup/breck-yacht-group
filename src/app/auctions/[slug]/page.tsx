@@ -402,8 +402,8 @@ export default function AuctionDetailPage() {
                 )}
           </div>
 
-          {/* Feed */}
-          <div>
+          {/* Feed — same width as comment box */}
+          <div className="max-w-2xl">
             {feed.length === 0 ? (
               <p className="text-white/20 text-sm py-8">
                 No activity yet. Place a bid or leave a comment to get the conversation started.
@@ -438,20 +438,18 @@ export default function AuctionDetailPage() {
 // ── Feed item: bid ────────────────────────────────────────────────────────────
 function BidFeedItem({ bid, isLatest }: { bid: Bid; isLatest: boolean }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-4"
+    <div className="px-5 py-4"
       style={{ backgroundColor: isLatest ? '#0f1d35' : '#0d0d0d', borderBottom: '1px solid #1a1a1a' }}>
-      <span className="flex-shrink-0 text-xs font-bold px-2 py-1 uppercase tracking-wider"
-        style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
-        Bid
-      </span>
-      <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-xs font-bold px-2 py-0.5 uppercase tracking-wider flex-shrink-0"
+          style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>Bid</span>
         <span className="font-bold text-white">{fmt(bid.amount)}</span>
-        <span className="text-white/30 text-sm ml-2">by {maskBidder(bid.bidder_id)}</span>
+        <span className="text-white/30 text-sm">by {maskBidder(bid.bidder_id)}</span>
+        {isLatest && (
+          <span className="text-xs text-green-400 font-semibold">High Bid</span>
+        )}
       </div>
-      <span className="text-white/25 text-xs flex-shrink-0">{fmtTime(bid.created_at)}</span>
-      {isLatest && (
-        <span className="flex-shrink-0 text-xs text-green-400 font-semibold">High Bid</span>
-      )}
+      <p className="text-white/25 text-xs">{fmtTime(bid.created_at)}</p>
     </div>
   )
 }
@@ -462,26 +460,23 @@ function CommentFeedItem({ comment, isOwn, onDelete }: {
 }) {
   return (
     <div className="px-5 py-4 group" style={{ backgroundColor: '#111', borderBottom: '1px solid #1a1a1a' }}>
-      <div className="flex items-start gap-4">
-        {/* Avatar */}
+      <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
           style={{ backgroundColor: '#0c1f3f', color: '#c9a84c' }}>
           {comment.display_name[0]?.toUpperCase() ?? '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-semibold text-sm text-white">{comment.display_name}</span>
             <span className="text-white/25 text-xs">{fmtTime(comment.created_at)}</span>
             {isOwn && (
-              <button
-                onClick={() => onDelete(comment.id)}
-                className="text-white/20 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-              >
+              <button onClick={() => onDelete(comment.id)}
+                className="text-white/20 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                 delete
               </button>
             )}
           </div>
-          <p className="text-white/70 text-sm leading-relaxed">{comment.body}</p>
+          <p className="text-white/70 text-sm leading-relaxed break-words">{comment.body}</p>
         </div>
       </div>
     </div>
