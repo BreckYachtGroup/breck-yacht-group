@@ -19,11 +19,34 @@ type Props = {
   onError: (msg: string) => void
 }
 
+// Returns a datetime-local string (YYYY-MM-DDTHH:mm) set to 5:00 PM Eastern
+// on a given date offset from today, accounting for ET offset (UTC-5 or UTC-4 DST).
+function defaultAt5pmET(daysFromNow: number): string {
+  const now = new Date()
+  // Determine ET offset: EDT = UTC-4 (Mar–Nov), EST = UTC-5 (Nov–Mar)
+  // Simple check: if the local Date shows DST is active for NY, use -4
+  const jan = new Date(now.getFullYear(), 0, 1).getTimezoneOffset()
+  const jul = new Date(now.getFullYear(), 6, 1).getTimezoneOffset()
+  const etOffset = Math.min(jan, jul) === 240 ? -4 : -5 // 240 = UTC-4
+
+  const target = new Date(now)
+  target.setDate(target.getDate() + daysFromNow)
+  // Build a date string at 17:00 ET expressed in UTC
+  const utcHour = 17 - etOffset // e.g. 17 - (-4) = 21 UTC during EDT
+  target.setUTCHours(utcHour, 0, 0, 0)
+
+  // Format as datetime-local value (YYYY-MM-DDTHH:mm) in local time
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}T${pad(target.getHours())}:00`
+}
+
 const DEFAULT: AuctionFormValues = {
   slug: '', title: '', description: '',
   make: '', model: '', year: '', length_ft: '',
   location: '', condition: 'Used', hours: '', vin: '',
-  status: 'draft', starts_at: '', ends_at: '',
+  status: 'draft',
+  starts_at: defaultAt5pmET(0),   // today at 5 PM ET
+  ends_at:   defaultAt5pmET(7),   // 7 days from now at 5 PM ET
   starting_bid: '', reserve_price: '',
   images: [],
 }
@@ -193,7 +216,7 @@ export default function AuctionForm({ token, saving, initialValues, onSubmit, on
               className={inputClass} style={inputStyle} required />
           </div>
           <div>
-            <label className={labelClass}>Ends At *</label>
+            <label className={labelClass}>Ends At * <span style={{ color: '#c9a84c', fontWeight: 400 }}>(defaults to 5 PM ET)</span></label>
             <input type="datetime-local" value={form.ends_at} onChange={e => set('ends_at', e.target.value)}
               className={inputClass} style={inputStyle} required />
           </div>
