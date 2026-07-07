@@ -191,14 +191,12 @@ export default function AuctionDetailPage() {
     <div style={{ backgroundColor: '#0c0c0c' }} className="min-h-screen text-white">
 
       {/* Back */}
-      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4">
+      <div style={{ backgroundColor: '#0c1f3f' }} className="px-6 py-4 xl:pr-[416px]">
         <a href="/auctions" className="text-sm text-white/40 hover:text-white transition-colors">← All Auctions</a>
       </div>
 
-      {/* Two-column grid: left scrolls naturally, right sticks */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] xl:items-start">
-
-        {/* ── Left: all content, scrolls with page ─────────────────────── */}
+      {/* Left: scrolls with page; padded right on xl to clear the fixed panel */}
+      <div className="xl:pr-[400px]">
         <div className="px-8 py-12 space-y-8">
 
             {/* Gallery */}
@@ -337,15 +335,21 @@ export default function AuctionDetailPage() {
             </div>
 
           </div>
+      </div>{/* end xl:pr-[400px] wrapper */}
 
-        {/* ── Right: sticky, fills viewport below nav ──────────────────── */}
-        <div className="hidden xl:block sticky overflow-y-auto"
-          style={{
-            top: '64px',
-            height: 'calc(100vh - 64px)',
-            backgroundColor: '#0c0c0c',
-            borderLeft: '1px solid #1a1a1a',
-          }}>
+      {/* ── Right: fixed panel, truly never moves ────────────────────── */}
+      <div className="hidden xl:block"
+        style={{
+          position: 'fixed',
+          top: '64px',
+          right: '0',
+          width: '400px',
+          height: 'calc(100vh - 64px)',
+          backgroundColor: '#0c0c0c',
+          borderLeft: '1px solid #1a1a1a',
+          overflowY: 'auto',
+          zIndex: 10,
+        }}>
           <div className="p-6 space-y-5">
 
               {isActive && <CountdownBlock endsAt={auction.ends_at} />}
@@ -419,9 +423,8 @@ export default function AuctionDetailPage() {
               )}
 
           </div>
-        </div>
+        </div>{/* end fixed panel */}
 
-      </div>
     </div>
   )
 }
