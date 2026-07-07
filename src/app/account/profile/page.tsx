@@ -23,7 +23,7 @@ export default function AccountProfilePage() {
   const router = useRouter()
 
   const [profile,  setProfile]  = useState<Profile | null>(null)
-  const [form,     setForm]     = useState<Profile>({ name: '', phone: '', looking_for: '', timeline: '' })
+  const [form,     setForm]     = useState<Profile>({ name: '', phone: '', looking_for: '', timeline: '', username: '' })
   const [editing,  setEditing]  = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [saveMsg,  setSaveMsg]  = useState<string | null>(null)
