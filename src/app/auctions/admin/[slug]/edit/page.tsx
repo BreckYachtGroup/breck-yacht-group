@@ -42,7 +42,7 @@ export default function EditAuctionPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session || session.user.email !== 'huebya@gmail.com') {
+      if (!session || session.user.email !== 'austin@breckyachtgroup.com') {
         router.replace('/'); return
       }
       const t = session.access_token

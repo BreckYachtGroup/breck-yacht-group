@@ -13,7 +13,7 @@ export default function CreateAuctionPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== 'huebya@gmail.com') {
+      if (!session || session.user.email !== 'austin@breckyachtgroup.com') {
         router.replace('/'); return
       }
       setToken(session.access_token)

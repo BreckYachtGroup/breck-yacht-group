@@ -6,7 +6,7 @@
 import { supabaseAdmin } from './supabase-admin'
 import type { NextRequest } from 'next/server'
 
-export const ADMIN_EMAIL = 'huebya@gmail.com'
+export const ADMIN_EMAIL = 'austin@breckyachtgroup.com'
 
 export async function getAdminUser(req: NextRequest) {
   const token = req.headers.get('authorization')?.replace('Bearer ', '')
