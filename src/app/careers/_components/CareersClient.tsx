@@ -125,7 +125,7 @@ export default function CareersClient() {
               },
               {
                 title: 'Clean, modern tools',
-                body: 'Custom CRM, real-time bidding technology, automated buyer matching, and a premium brand that positions you to sell at the high end of the market.',
+                body: 'Listings managed through Boats Group and YachtBroker.org, real-time bidding technology, and a premium brand that positions you to sell at the high end of the market.',
               },
               {
                 title: 'Licensing support',
