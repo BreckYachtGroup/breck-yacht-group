@@ -10,7 +10,7 @@ export default function AuctionTermsPage() {
       <div style={{ backgroundColor: '#0c1f3f' }} className="py-20 text-center text-white">
         <p className="text-xs tracking-[0.4em] uppercase mb-2" style={{ color: '#c9a84c' }}>Legal</p>
         <h1 className="text-4xl font-bold">Auction Terms &amp; Conditions</h1>
-        <p className="text-white/40 text-sm mt-3">Last updated: July 2026</p>
+        <p className="text-white/40 text-sm mt-3">Last updated: July 8, 2026</p>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-16 space-y-10 text-gray-700 leading-relaxed">
@@ -66,7 +66,20 @@ export default function AuctionTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">11. Contact</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-3">11. Platform Outage &amp; Service Interruption Policy</h2>
+          <p>Breck Yacht Group is committed to maintaining platform availability during all active auctions. In the event of a verified service interruption — defined as the platform being inaccessible or non-functional for 2 or more consecutive minutes during an active auction — the following policy applies:</p>
+          <ul className="list-disc pl-6 mt-3 space-y-2">
+            <li>The affected auction&apos;s end time will be extended by no less than the verified duration of the outage, plus a minimum 10-minute buffer to allow all bidders adequate time to return and bid.</li>
+            <li>Extensions due to service interruptions are applied at Breck Yacht Group&apos;s sole discretion and are separate from the standard anti-snipe extensions described in Section 4.</li>
+            <li>Breck Yacht Group will communicate outage extensions via the auction listing page, by email to all registered bidders and watchers of the affected auction, and via our social media channels.</li>
+            <li>A service interruption caused by factors outside Breck Yacht Group&apos;s reasonable control — including but not limited to third-party infrastructure failures, internet outages, or acts of God — will be handled with the same extension policy on a best-efforts basis.</li>
+            <li>No bid placed prior to a verified outage will be invalidated due to the interruption. All bids recorded before the outage remain valid and binding.</li>
+          </ul>
+          <p className="mt-3">Breck Yacht Group&apos;s platform uptime status can be verified at any time at <a href="/api/health" className="underline text-gray-900">breckyachtgroup.com/api/health</a>. In the event of a suspected outage, bidders are encouraged to contact us directly at <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or <a href="tel:5617235636" className="underline text-gray-900">(561) 723-5636</a>.</p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-3">12. Contact</h2>
           <p>Questions regarding these terms may be directed to <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or by calling <a href="tel:5617235636" className="underline text-gray-900">(561) 723-5636</a>.</p>
         </section>
 
