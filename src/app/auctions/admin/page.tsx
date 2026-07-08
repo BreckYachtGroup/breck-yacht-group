@@ -17,6 +17,7 @@ type IntakeSubmission = {
   engine_count: number; engine_make: string; engine_hours: number | null
   condition: string; reserve_price: number | null; current_location: string
   listing_id: string | null
+  listing_slug: string | null   // derived from auction_listings join
   buyer_profiles: { name: string | null; phone: string | null } | null
   auth_email?: string
 }
@@ -91,7 +92,12 @@ export default function AuctionAdminPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
     const d = await res.json()
-    setIntakes(d.submissions ?? [])
+    // Flatten the auction_listings join into a listing_slug field
+    const submissions = (d.submissions ?? []).map((s: IntakeSubmission & { auction_listings?: { slug: string } | null }) => ({
+      ...s,
+      listing_slug: s.auction_listings?.slug ?? null,
+    }))
+    setIntakes(submissions)
     setIntakesLoading(false)
   }
 
@@ -364,11 +370,20 @@ export default function AuctionAdminPage() {
                         {s.reserve_price ? '$' + s.reserve_price.toLocaleString() : 'Not specified'}
                       </span></span>
                     </div>
-                    {s.listing_id && (
-                      <a href={`/auctions/admin/${s.listing_id}/edit`}
-                        className="text-xs underline underline-offset-2" style={{ color: '#c9a84c' }}>
-                        View draft listing →
-                      </a>
+                    {s.listing_slug && (
+                      <div className="flex items-center gap-3 mt-1">
+                        <a href={`/auctions/admin/${s.listing_slug}/edit`}
+                          className="text-xs px-3 py-1 rounded font-semibold uppercase tracking-wider transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
+                          Edit Draft
+                        </a>
+                        <a href={`/auctions/admin/${s.listing_slug}/preview`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-xs px-3 py-1 rounded font-semibold uppercase tracking-wider border transition-colors hover:border-white/40"
+                          style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}>
+                          Preview ↗
+                        </a>
+                      </div>
                     )}
                   </div>
                   {isPending && (

@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       engine_count, engine_make, engine_hours,
       condition, reserve_price, current_location,
       listing_id,
+      auction_listings!listing_id ( slug ),
       buyer_profiles ( name, phone )
     `)
     .order('created_at', { ascending: false })

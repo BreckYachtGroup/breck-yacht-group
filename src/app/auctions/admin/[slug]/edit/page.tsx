@@ -48,9 +48,11 @@ export default function EditAuctionPage() {
       const t = session.access_token
       setToken(t)
 
-      // Load existing auction
-      const res = await fetch(`/api/auctions/${slug}`)
-      if (!res.ok) { setError('Auction not found'); return }
+      // Load existing auction via admin endpoint (includes drafts)
+      const res = await fetch(`/api/auctions/admin/listings/${slug}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      })
+      if (!res.ok) { setError('Listing not found'); return }
       const d = await res.json()
       setInitial(toFormValues(d.auction))
     })
