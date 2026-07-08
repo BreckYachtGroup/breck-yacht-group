@@ -17,7 +17,7 @@ export default function SignUpPage() {
   const router = useRouter()
 
   const [form, setForm] = useState({
-    name: '', email: '', password: '', phone: '', looking_for: '', timeline: '',
+    name: '', username: '', email: '', password: '', phone: '', looking_for: '', timeline: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -57,6 +57,7 @@ export default function SignUpPage() {
         },
         body: JSON.stringify({
           name:        form.name,
+          username:    form.username || null,
           phone:       form.phone,
           looking_for: form.looking_for,
           timeline:    form.timeline,
@@ -98,6 +99,22 @@ export default function SignUpPage() {
                 onChange={e => set('name', e.target.value)}
                 placeholder="John Smith"
                 className={inputCls} />
+            </div>
+
+            <div>
+              <label className={labelCls}>
+                Auction Username
+                <span className="ml-1 font-normal normal-case tracking-normal text-gray-400">(shown on bids &amp; comments)</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">@</span>
+                <input type="text" value={form.username}
+                  onChange={e => set('username', e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                  placeholder="e.g. MarlinHunter305"
+                  maxLength={20}
+                  className={`${inputCls} pl-7`} />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Optional · 3–20 characters, letters/numbers/underscores. Can be set later in your profile.</p>
             </div>
 
             <div>

@@ -134,10 +134,15 @@ export default function AuctionsPage() {
       <div className="max-w-7xl mx-auto px-6 py-16">
 
         {/* Sub-nav */}
-        <div className="flex gap-6 mb-12 text-xs uppercase tracking-widest">
+        <div className="flex items-center gap-6 mb-12 text-xs uppercase tracking-widest">
           <span className="text-white/60 border-b border-white/60 pb-0.5">Live</span>
           <Link href="/auctions/results" className="text-white/30 hover:text-white/60 transition-colors">Results</Link>
           <Link href="/auctions/terms" className="text-white/30 hover:text-white/60 transition-colors">Terms</Link>
+          <Link href="/auctions/sell"
+            className="ml-auto px-4 py-1.5 text-[#0c1f3f] font-bold hover:opacity-80 transition-opacity"
+            style={{ backgroundColor: '#c9a84c' }}>
+            Sell Your Boat →
+          </Link>
         </div>
 
         {loading ? (

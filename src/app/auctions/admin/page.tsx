@@ -10,6 +10,15 @@ type Auction = {
   starting_bid: number; current_bid: number; bid_count: number; created_at: string
 }
 type Bid = { id: string; amount: number; created_at: string; bidder_email: string }
+type IntakeSubmission = {
+  id: string; status: string; created_at: string
+  year: number; make: string; model: string; length_ft: number | null
+  engine_count: number; engine_make: string; engine_hours: number | null
+  condition: string; reserve_price: number | null; current_location: string
+  listing_id: string | null
+  buyer_profiles: { name: string | null; phone: string | null } | null
+  auth_email?: string
+}
 type FlaggedComment = {
   id: string; display_name: string; body: string | null; image_url: string | null
   flag_count: number; like_count: number; created_at: string
@@ -42,6 +51,9 @@ export default function AuctionAdminPage() {
   const [flagged,         setFlagged]         = useState<FlaggedComment[]>([])
   const [flaggedLoading,  setFlaggedLoading]  = useState(false)
   const [deletingComment, setDeletingComment] = useState<string | null>(null)
+  const [intakes,         setIntakes]         = useState<IntakeSubmission[]>([])
+  const [intakesLoading,  setIntakesLoading]  = useState(false)
+  const [rejectingIntake, setRejectingIntake] = useState<string | null>(null)
 
   // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -67,7 +79,31 @@ export default function AuctionAdminPage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { if (token) { fetchAuctions(); fetchFlagged() } }, [token, fetchAuctions])
+  useEffect(() => { if (token) { fetchAuctions(); fetchFlagged(); fetchIntakes() } }, [token, fetchAuctions])
+
+  // ── Fetch intake submissions ───────────────────────────────────────────────
+  async function fetchIntakes() {
+    if (!token) return
+    setIntakesLoading(true)
+    const res = await fetch('/api/auctions/admin/intake', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const d = await res.json()
+    setIntakes(d.submissions ?? [])
+    setIntakesLoading(false)
+  }
+
+  async function rejectIntake(id: string) {
+    if (!token || !confirm('Reject this intake submission?')) return
+    setRejectingIntake(id)
+    await fetch('/api/auctions/admin/intake', {
+      method:  'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id, status: 'rejected' }),
+    })
+    setRejectingIntake(null)
+    fetchIntakes()
+  }
 
   // ── Fetch flagged comments ─────────────────────────────────────────────────
   async function fetchFlagged() {
@@ -248,6 +284,78 @@ export default function AuctionAdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Seller Intake Submissions */}
+      <div className="px-8 pb-8">
+        <div className="flex items-center gap-4 mb-4" style={{ borderTop: '1px solid #222', paddingTop: '32px' }}>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/60">Seller Intake Submissions</h2>
+          {intakes.filter(i => i.status === 'pending' || i.status === 'draft_created').length > 0 && (
+            <span className="px-2 py-0.5 text-xs font-bold rounded"
+              style={{ backgroundColor: '#1a4a1a', color: '#6fcf6f' }}>
+              {intakes.filter(i => i.status === 'pending' || i.status === 'draft_created').length} pending
+            </span>
+          )}
+        </div>
+
+        {intakesLoading ? (
+          <p className="text-white/30 text-sm animate-pulse">Loading…</p>
+        ) : intakes.length === 0 ? (
+          <p className="text-white/20 text-sm">No intake submissions yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {intakes.map(s => {
+              const isPending = s.status === 'pending' || s.status === 'draft_created'
+              return (
+                <div key={s.id} className="p-5 flex gap-5 items-start"
+                  style={{ backgroundColor: '#111', border: `1px solid ${isPending ? '#1a3a1a' : '#1a1a1a'}` }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span className="font-bold text-white">
+                        {s.year} {s.make} {s.model}{s.length_ft ? ` · ${s.length_ft}ft` : ''}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded font-semibold capitalize"
+                        style={{
+                          backgroundColor: isPending ? '#1a3a1a' : s.status === 'rejected' ? '#3a1a1a' : '#1a1a3a',
+                          color:           isPending ? '#6fcf6f' : s.status === 'rejected' ? '#cf6f6f' : '#6f9fcf',
+                        }}>
+                        {s.status.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-white/30">
+                        {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 text-xs text-white/50 mb-3">
+                      <span>Seller: <span className="text-white/80">{s.buyer_profiles?.name || '—'}</span></span>
+                      <span>Phone: <span className="text-white/80">{s.buyer_profiles?.phone || '—'}</span></span>
+                      <span>Engines: <span className="text-white/80">{s.engine_count}x {s.engine_make}{s.engine_hours ? ` · ${s.engine_hours}hrs` : ''}</span></span>
+                      <span>Condition: <span className="text-white/80 capitalize">{s.condition || '—'}</span></span>
+                      <span>Location: <span className="text-white/80">{s.current_location || '—'}</span></span>
+                      <span>Reserve: <span className="text-white/80" style={{ color: s.reserve_price ? '#c9a84c' : undefined }}>
+                        {s.reserve_price ? '$' + s.reserve_price.toLocaleString() : 'Not specified'}
+                      </span></span>
+                    </div>
+                    {s.listing_id && (
+                      <a href={`/auctions/admin/${s.listing_id}/edit`}
+                        className="text-xs underline underline-offset-2" style={{ color: '#c9a84c' }}>
+                        View draft listing →
+                      </a>
+                    )}
+                  </div>
+                  {isPending && (
+                    <button
+                      onClick={() => rejectIntake(s.id)}
+                      disabled={rejectingIntake === s.id}
+                      className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
+                      style={{ backgroundColor: '#3a1a1a', color: '#cf6f6f' }}>
+                      {rejectingIntake === s.id ? 'Rejecting…' : 'Reject'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

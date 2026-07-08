@@ -203,7 +203,68 @@ export async function sendFlagAlertEmail({
   })
 }
 
-// ── 6. Newsletter welcome ─────────────────────────────────────────────────────
+// ── 6. Seller intake — admin alert ───────────────────────────────────────────
+export async function sendIntakeAlertEmail({
+  sellerName, sellerEmail, sellerPhone, year, make, model, lengthFt,
+  reservePrice, currentLocation, intakeId,
+}: {
+  sellerName: string; sellerEmail: string; sellerPhone: string
+  year: number; make: string; model: string; lengthFt: number
+  reservePrice: number | null; currentLocation: string; intakeId: string
+}) {
+  return resend.emails.send({
+    from: FROM,
+    to:   'austin@breckyachtgroup.com',
+    subject: `New auction intake: ${year} ${make} ${model} — ${sellerName}`,
+    html: base(`
+      <p style="margin:0 0 8px;color:#c9a84c;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">New Seller Intake Submission</p>
+      <h2 style="margin:0 0 24px;color:#0c1f3f;font-size:22px;">${year} ${make} ${model}${lengthFt ? ` · ${lengthFt}ft` : ''}</h2>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+        <tr><td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;width:160px;">Seller</td>
+            <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#333;">${sellerName}</td></tr>
+        <tr><td style="padding:12px 16px;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Email</td>
+            <td style="padding:12px 16px;border:1px solid #e8e8e0;"><a href="mailto:${sellerEmail}" style="color:#0c1f3f;">${sellerEmail}</a></td></tr>
+        <tr><td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Phone</td>
+            <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#333;">${sellerPhone || '—'}</td></tr>
+        <tr><td style="padding:12px 16px;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Location</td>
+            <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#333;">${currentLocation || '—'}</td></tr>
+        <tr><td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Reserve Price</td>
+            <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#c9a84c;font-size:18px;font-weight:bold;">${reservePrice ? fmt(reservePrice) : 'Not specified'}</td></tr>
+      </table>
+      <p style="color:#555;font-size:14px;line-height:1.7;">A draft listing has been created. Review the full submission in the admin panel.</p>
+      ${goldBtn(`${SITE}/auctions/admin`, 'Review in Admin →')}
+    `),
+  })
+}
+
+// ── 7. Seller intake — confirmation to seller ─────────────────────────────────
+export async function sendIntakeConfirmationEmail({
+  to, sellerName, year, make, model,
+}: {
+  to: string; sellerName: string; year: number; make: string; model: string
+}) {
+  return resend.emails.send({
+    from: FROM, to,
+    subject: `We received your listing request — ${year} ${make} ${model}`,
+    html: base(`
+      <p style="margin:0 0 8px;color:#c9a84c;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Listing Request Received</p>
+      <h2 style="margin:0 0 24px;color:#0c1f3f;font-size:22px;">We've got your submission.</h2>
+      <p style="color:#333;line-height:1.7;">Hi ${sellerName},</p>
+      <p style="color:#333;line-height:1.7;">Thank you for submitting your <strong>${year} ${make} ${model}</strong> for auction consideration. We've received your information and will be in touch within 1–2 business days to schedule the pre-auction survey and confirm your listing dates.</p>
+      <p style="color:#333;font-size:13px;line-height:1.7;margin-top:24px;padding:20px;background:#f9f9f6;border-left:3px solid #c9a84c;">
+        <strong style="display:block;margin-bottom:8px;color:#0c1f3f;">What happens next:</strong>
+        1. Our team reviews your submission and confirms eligibility.<br/>
+        2. We schedule an independent pre-auction survey at your boat's location.<br/>
+        3. Once the survey is complete, your 7-day auction goes live.<br/>
+        4. You pay $0 in seller commission if your boat sells at auction.
+      </p>
+      <p style="color:#333;line-height:1.7;margin-top:24px;">Questions? Call or text us at <a href="tel:5617235636" style="color:#0c1f3f;">(561) 723-5636</a> or reply to this email.</p>
+      ${goldBtn(`${SITE}/auctions`, 'Browse Live Auctions')}
+    `),
+  })
+}
+
+// ── 8. Newsletter welcome ─────────────────────────────────────────────────────
 export async function sendNewsletterWelcome({ to }: { to: string }) {
   return resend.emails.send({
     from: FROM, to,
