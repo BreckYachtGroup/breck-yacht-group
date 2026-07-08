@@ -12,14 +12,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin }            from '@/lib/supabase-admin'
-import { requireAdmin }             from '@/lib/admin-auth'
+import { getAdminUser }             from '@/lib/admin-auth'
 
 // ── GET /api/auctions/admin/clerking ─────────────────────────────────────────
 // Returns all clerking records newest-first.
 // Optional query params: ?status=pending|delivered&year=2026
 export async function GET(req: NextRequest) {
-  const authError = await requireAdmin(req)
-  if (authError) return authError
+  const adminUser = await getAdminUser(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = req.nextUrl
   const status = searchParams.get('status')   // 'pending' | 'delivered'
@@ -69,13 +69,10 @@ export async function GET(req: NextRequest) {
 // Creates a new clerking record for a completed auction.
 // Body: { auction_slug, winner_address, proceeds_delivered_at? }
 export async function POST(req: NextRequest) {
-  const authError = await requireAdmin(req)
-  if (authError) return authError
+  const adminUser = await getAdminUser(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Extract the admin email for the audit trail
-  const authHeader = req.headers.get('authorization') ?? ''
-  const token      = authHeader.replace('Bearer ', '')
-  const { data: { user: adminUser } } = await supabaseAdmin.auth.getUser(token)
+  // adminUser is already verified above — use directly for audit trail
 
   const body = await req.json().catch(() => null)
   if (!body?.auction_slug) {
@@ -200,8 +197,8 @@ export async function POST(req: NextRequest) {
 // Updates proceeds delivery date/notes on an existing record.
 // Body: { id, proceeds_delivered_at, proceeds_delivery_notes? }
 export async function PATCH(req: NextRequest) {
-  const authError = await requireAdmin(req)
-  if (authError) return authError
+  const adminUser = await getAdminUser(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json().catch(() => null)
   if (!body?.id) {
