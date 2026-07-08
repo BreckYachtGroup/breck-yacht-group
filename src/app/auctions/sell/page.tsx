@@ -496,8 +496,9 @@ export default function SellPage() {
                     By signing this optional 1-year exclusive listing agreement with Breck Yacht Group, as a show of
                     good faith and loyalty, BYG will waive the 1% seller commission upon a successful auction sale.
                     If the 7-day auction does not result in a sale, the vessel will automatically transition to the
-                    BYG traditional brokerage program at 8–9% commission for the remainder of the year — no additional
-                    paperwork required. Early termination requires reimbursement of out-of-pocket costs (survey,
+                    BYG traditional brokerage program at 8–9% commission for the remainder of the year.
+                    Our team will be in touch to finalize the listing agreement before your auction goes live.
+                    Early termination requires reimbursement of out-of-pocket costs (survey,
                     photography) and is subject to a 90–180 day protection period.
                   </p>
                   {form.ack_listing_agreement && (
