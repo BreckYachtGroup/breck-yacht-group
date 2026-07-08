@@ -1,27 +1,22 @@
 /**
  * POST /api/auctions/[slug]/bid
  *
- * Places a bid on an active auction.
- *
- * Rules:
- *  - User must be authenticated
- *  - Auction must be in 'active' status
- *  - Auction must not have ended (ends_at > now)
- *  - Bid must exceed current_bid by at least $100 (minimum increment)
- *  - Anti-snipe: if bid lands within 3 minutes of ends_at,
- *    reset ends_at to 3 minutes from now (max 10 extensions per auction)
+ * Places a bid on an active auction using an atomic Postgres function
+ * (place_bid) that holds a row-level lock for the duration of the transaction.
+ * This eliminates the race condition where two concurrent bids could both
+ * pass application-level validation before either writes to the DB.
  *
  * Auth: Authorization: Bearer <supabase_access_token>
+ *
+ * IMPORTANT: Run supabase-place-bid-fn.sql in the Supabase SQL Editor
+ * before this route will work correctly.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendOutbidEmail } from '@/lib/auction-emails'
 
-const MIN_INCREMENT  = 100             // minimum bid increment in dollars
-const SNIPE_WINDOW   = 3 * 60 * 1000  // trigger if < 3 minutes remain
-const SNIPE_EXTEND   = 3 * 60 * 1000  // reset timer to 3 minutes from now
-const MAX_EXTENSIONS = 10
+const MIN_INCREMENT = 100  // minimum bid increment in dollars
 
 export async function POST(
   req: NextRequest,
@@ -36,112 +31,84 @@ export async function POST(
 
   // ── Parse input ────────────────────────────────────────────────────────────
   const { slug } = await params
-  const body = await req.json().catch(() => ({}))
+  const body   = await req.json().catch(() => ({}))
   const amount = Number(body.amount)
 
   if (!amount || isNaN(amount) || amount <= 0) {
     return NextResponse.json({ error: 'Invalid bid amount.' }, { status: 400 })
   }
 
-  // ── Load auction ───────────────────────────────────────────────────────────
-  const { data: auction, error: fetchError } = await supabaseAdmin
-    .from('auction_listings')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-
-  if (fetchError || !auction) {
-    return NextResponse.json({ error: 'Auction not found.' }, { status: 404 })
-  }
-
-  const now    = Date.now()
-  const endsAt = new Date(auction.ends_at).getTime()
-
-  if (auction.status !== 'active') {
-    return NextResponse.json({ error: 'This auction is not active.' }, { status: 400 })
-  }
-
-  if (now >= endsAt) {
-    return NextResponse.json({ error: 'This auction has ended.' }, { status: 400 })
-  }
-
-  // ── Validate bid amount ────────────────────────────────────────────────────
-  const minBid = Math.max(auction.starting_bid, auction.current_bid + MIN_INCREMENT)
-  if (amount < minBid) {
-    return NextResponse.json({
-      error: `Minimum bid is $${minBid.toLocaleString()}.`,
-      minBid,
-    }, { status: 400 })
-  }
-
-  // Can't outbid yourself
-  if (auction.current_bidder_id === user.id) {
-    return NextResponse.json({ error: 'You are already the highest bidder.' }, { status: 400 })
-  }
-
-  // ── Anti-snipe: extend if bid lands within 5 minutes of end ───────────────
-  let newEndsAt = auction.ends_at
-  if (endsAt - now < SNIPE_WINDOW && auction.extended_count < MAX_EXTENSIONS) {
-    newEndsAt = new Date(endsAt + SNIPE_EXTEND).toISOString()
-  }
-
-  // ── Look up bidder's username ──────────────────────────────────────────────
+  // ── Look up bidder's display username ──────────────────────────────────────
+  // Done before the RPC so the username is passed into the atomic transaction.
   const { data: bidderProfile } = await supabaseAdmin
     .from('buyer_profiles')
     .select('username, name')
     .eq('id', user.id)
     .maybeSingle()
 
-  // Use username if set, fall back to name, then email prefix
   const bidderUsername = bidderProfile?.username
     || bidderProfile?.name?.split(' ')[0]
     || user.email?.split('@')[0]
     || 'Bidder'
 
-  // ── Record the bid ─────────────────────────────────────────────────────────
-  const { error: bidError } = await supabaseAdmin
-    .from('auction_bids')
-    .insert({ auction_id: auction.id, bidder_id: user.id, amount, bidder_username: bidderUsername })
+  // ── Atomic bid via Postgres function ───────────────────────────────────────
+  // place_bid() uses SELECT FOR UPDATE to lock the auction row, then validates
+  // and writes the bid + updates the listing in a single transaction.
+  // No race condition is possible — concurrent bids queue at the DB level.
+  const { data: result, error: rpcError } = await supabaseAdmin.rpc('place_bid', {
+    p_slug:      slug,
+    p_bidder_id: user.id,
+    p_amount:    amount,
+    p_username:  bidderUsername,
+  })
 
-  if (bidError) return NextResponse.json({ error: bidError.message }, { status: 500 })
+  if (rpcError) {
+    console.error('[place_bid rpc]', rpcError)
+    return NextResponse.json({ error: 'Bid failed. Please try again.' }, { status: 500 })
+  }
 
-  // ── Update auction ─────────────────────────────────────────────────────────
-  const { error: updateError } = await supabaseAdmin
-    .from('auction_listings')
-    .update({
-      current_bid:        amount,
-      current_bidder_id:  user.id,
-      bid_count:          auction.bid_count + 1,
-      ends_at:            newEndsAt,
-      extended_count:     newEndsAt !== auction.ends_at
-                            ? auction.extended_count + 1
-                            : auction.extended_count,
-    })
-    .eq('id', auction.id)
+  // place_bid returns a jsonb object — Supabase RPC unwraps it as JS object
+  const res = result as {
+    error?:       string
+    minBid?:      number
+    success?:     boolean
+    currentBid?:  number
+    endsAt?:      string
+    extended?:    boolean
+    auctionId?:   string
+    auctionTitle?: string
+    prevBidderId?: string | null
+  }
 
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+  // Validation errors from inside the Postgres function
+  if (res.error) {
+    return NextResponse.json(
+      { error: res.error, ...(res.minBid ? { minBid: res.minBid } : {}) },
+      { status: 400 }
+    )
+  }
 
   // ── Fire-and-forget outbid email to previous highest bidder ───────────────
-  if (auction.current_bidder_id && auction.current_bidder_id !== user.id) {
-    const { data: { user: prevUser } } = await supabaseAdmin.auth.admin.getUserById(auction.current_bidder_id)
-    if (prevUser?.email) {
+  if (res.prevBidderId && res.prevBidderId !== user.id) {
+    supabaseAdmin.auth.admin.getUserById(res.prevBidderId).then(({ data: { user: prevUser } }) => {
+      if (!prevUser?.email) return
       const prevName = prevUser.user_metadata?.full_name?.split(' ')[0] ?? 'there'
       sendOutbidEmail({
-        to:          prevUser.email,
-        bidderName:  prevName,
-        auctionTitle: auction.title,
+        to:           prevUser.email,
+        bidderName:   prevName,
+        auctionTitle: res.auctionTitle ?? slug,
         auctionSlug:  slug,
-        newBid:       amount,
-        minNextBid:   amount + MIN_INCREMENT,
-        endsAt:       newEndsAt,
+        newBid:       res.currentBid!,
+        minNextBid:   res.currentBid! + MIN_INCREMENT,
+        endsAt:       res.endsAt!,
       }).catch(err => console.error('[outbid email]', err))
-    }
+    }).catch(() => {})
   }
 
   return NextResponse.json({
     success:    true,
-    currentBid: amount,
-    endsAt:     newEndsAt,
-    extended:   newEndsAt !== auction.ends_at,
+    currentBid: res.currentBid,
+    endsAt:     res.endsAt,
+    extended:   res.extended ?? false,
   })
 }
