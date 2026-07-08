@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getSurveyTier, formatDeposit } from '@/lib/survey-tiers'
 
 type Auction = {
   id: string; slug: string; title: string; make: string; model: string
@@ -51,9 +52,10 @@ export default function AuctionAdminPage() {
   const [flagged,         setFlagged]         = useState<FlaggedComment[]>([])
   const [flaggedLoading,  setFlaggedLoading]  = useState(false)
   const [deletingComment, setDeletingComment] = useState<string | null>(null)
-  const [intakes,         setIntakes]         = useState<IntakeSubmission[]>([])
-  const [intakesLoading,  setIntakesLoading]  = useState(false)
-  const [rejectingIntake, setRejectingIntake] = useState<string | null>(null)
+  const [intakes,          setIntakes]          = useState<IntakeSubmission[]>([])
+  const [intakesLoading,   setIntakesLoading]   = useState(false)
+  const [rejectingIntake,  setRejectingIntake]  = useState<string | null>(null)
+  const [approvingIntake,  setApprovingIntake]  = useState<string | null>(null)
 
   // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -91,6 +93,24 @@ export default function AuctionAdminPage() {
     const d = await res.json()
     setIntakes(d.submissions ?? [])
     setIntakesLoading(false)
+  }
+
+  async function approveIntake(id: string) {
+    if (!token || !confirm('Approve this intake and send the deposit request email to the seller?')) return
+    setApprovingIntake(id)
+    const res = await fetch('/api/auctions/admin/intake', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ id, action: 'approve' }),
+    })
+    const json = await res.json()
+    setApprovingIntake(null)
+    if (!res.ok) {
+      alert('Approval failed: ' + (json.error ?? 'Unknown error'))
+    } else {
+      alert(`✓ Approved — deposit request sent (${json.depositAmount}, ${json.tier})`)
+    }
+    fetchIntakes()
   }
 
   async function rejectIntake(id: string) {
@@ -308,6 +328,8 @@ export default function AuctionAdminPage() {
           <div className="space-y-3">
             {intakes.map(s => {
               const isPending = s.status === 'pending' || s.status === 'draft_created'
+              const tier      = getSurveyTier(s.length_ft)
+              const deposit   = formatDeposit(tier.depositCents)
               return (
                 <div key={s.id} className="p-5 flex gap-5 items-start"
                   style={{ backgroundColor: '#111', border: `1px solid ${isPending ? '#1a3a1a' : '#1a1a1a'}` }}>
@@ -318,10 +340,15 @@ export default function AuctionAdminPage() {
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded font-semibold capitalize"
                         style={{
-                          backgroundColor: isPending ? '#1a3a1a' : s.status === 'rejected' ? '#3a1a1a' : '#1a1a3a',
-                          color:           isPending ? '#6fcf6f' : s.status === 'rejected' ? '#cf6f6f' : '#6f9fcf',
+                          backgroundColor: isPending ? '#1a3a1a' : s.status === 'rejected' ? '#3a1a1a' : s.status === 'approved' ? '#1a2a3a' : '#1a1a3a',
+                          color:           isPending ? '#6fcf6f' : s.status === 'rejected' ? '#cf6f6f' : s.status === 'approved' ? '#c9a84c' : '#6f9fcf',
                         }}>
                         {s.status.replace('_', ' ')}
+                      </span>
+                      {/* Survey tier + deposit badge */}
+                      <span className="text-xs px-2 py-0.5 rounded"
+                        style={{ backgroundColor: '#1a1a2a', color: '#8888cc' }}>
+                        {tier.label} · {deposit} deposit
                       </span>
                       <span className="text-xs text-white/30">
                         {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -345,13 +372,22 @@ export default function AuctionAdminPage() {
                     )}
                   </div>
                   {isPending && (
-                    <button
-                      onClick={() => rejectIntake(s.id)}
-                      disabled={rejectingIntake === s.id}
-                      className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
-                      style={{ backgroundColor: '#3a1a1a', color: '#cf6f6f' }}>
-                      {rejectingIntake === s.id ? 'Rejecting…' : 'Reject'}
-                    </button>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => approveIntake(s.id)}
+                        disabled={approvingIntake === s.id}
+                        className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider disabled:opacity-40"
+                        style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
+                        {approvingIntake === s.id ? 'Sending…' : `Approve & Request ${deposit}`}
+                      </button>
+                      <button
+                        onClick={() => rejectIntake(s.id)}
+                        disabled={rejectingIntake === s.id}
+                        className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
+                        style={{ backgroundColor: '#3a1a1a', color: '#cf6f6f' }}>
+                        {rejectingIntake === s.id ? 'Rejecting…' : 'Reject'}
+                      </button>
+                    </div>
                   )}
                 </div>
               )

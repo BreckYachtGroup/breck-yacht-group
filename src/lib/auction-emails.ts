@@ -256,7 +256,7 @@ export async function sendIntakeConfirmationEmail({
         1. Our team reviews your submission and confirms eligibility.<br/>
         2. We schedule an independent pre-auction survey at your boat's location.<br/>
         3. Once the survey is complete, your 7-day auction goes live.<br/>
-        4. You pay $0 in seller commission if your boat sells at auction.
+        4. If your boat sells at auction, a 1% seller commission applies at closing.
       </p>
       <p style="color:#333;line-height:1.7;margin-top:24px;">Questions? Call or text us at <a href="tel:5617235636" style="color:#0c1f3f;">(561) 723-5636</a> or reply to this email.</p>
       ${goldBtn(`${SITE}/auctions`, 'Browse Live Auctions')}
@@ -264,7 +264,75 @@ export async function sendIntakeConfirmationEmail({
   })
 }
 
-// ── 8. Newsletter welcome ─────────────────────────────────────────────────────
+// ── 8. Survey deposit request — sent to seller on intake approval ─────────────
+export async function sendDepositRequestEmail({
+  to, sellerName, year, make, model, lengthFt,
+  tierLabel, depositAmount, stripePaymentLink,
+}: {
+  to: string; sellerName: string
+  year: number; make: string; model: string; lengthFt: number | null
+  tierLabel: string       // e.g. "40ft+"
+  depositAmount: string   // formatted, e.g. "$1,500"
+  stripePaymentLink: string  // Stripe-hosted payment URL
+}) {
+  return resend.emails.send({
+    from: FROM, to,
+    subject: `Action required — survey deposit for your ${year} ${make} ${model}`,
+    html: base(`
+      <p style="margin:0 0 8px;color:#c9a84c;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Survey Deposit Required</p>
+      <h2 style="margin:0 0 24px;color:#0c1f3f;font-size:22px;">Your listing has been approved.</h2>
+      <p style="color:#333;line-height:1.7;">Hi ${sellerName},</p>
+      <p style="color:#333;line-height:1.7;">
+        Great news — your <strong>${year} ${make} ${model}${lengthFt ? ` (${lengthFt}ft)` : ''}</strong>
+        has been approved for auction listing. Before we schedule your independent pre-auction survey,
+        we require a non-refundable survey deposit to cover the cost of the survey.
+      </p>
+
+      <!-- Deposit summary -->
+      <table style="width:100%;border-collapse:collapse;margin:24px 0;">
+        <tr>
+          <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;width:160px;">Vessel</td>
+          <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#333;">${year} ${make} ${model}${lengthFt ? ` · ${lengthFt}ft` : ''}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Vessel Class</td>
+          <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#333;">${tierLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Survey Deposit</td>
+          <td style="padding:12px 16px;background:#f9f9f6;border:1px solid #e8e8e0;color:#c9a84c;font-size:22px;font-weight:bold;">${depositAmount}</td>
+        </tr>
+      </table>
+
+      <!-- Policy box -->
+      <p style="color:#333;font-size:13px;line-height:1.7;margin:0 0 24px;padding:20px;background:#f9f9f6;border-left:3px solid #c9a84c;">
+        <strong style="display:block;margin-bottom:8px;color:#0c1f3f;">Survey deposit policy:</strong>
+        This deposit is <strong>non-refundable under all circumstances</strong>. If your vessel passes survey
+        and your auction closes successfully, this deposit will be credited back to you at closing.
+        If the survey reveals issues and you choose not to proceed, the deposit covers the cost
+        of the survey in full — Breck Yacht Group assumes no liability for survey findings.
+      </p>
+
+      <!-- CTA -->
+      ${goldBtn(stripePaymentLink, `Pay ${depositAmount} Deposit →`)}
+
+      <!-- Security notice -->
+      <p style="margin-top:32px;padding:16px;background:#fff8e6;border:1px solid #e8d98a;color:#7a6a00;font-size:12px;line-height:1.7;">
+        <strong>Security notice:</strong> This payment link will always go to <strong>stripe.com</strong> —
+        never a third-party site. Breck Yacht Group will never ask you to pay via wire transfer,
+        Zelle, Venmo, or Cash App. If you received this email from any address other than
+        <strong>auctions@breckyachtgroup.com</strong>, do not click the link and contact us immediately
+        at <a href="tel:5617235636" style="color:#7a6a00;">(561) 723-5636</a>.
+      </p>
+
+      <p style="margin-top:24px;color:#999;font-size:12px;line-height:1.7;">
+        Questions? Reply to this email or call us at <a href="tel:5617235636" style="color:#999;">(561) 723-5636</a>.
+      </p>
+    `),
+  })
+}
+
+// ── 9. Newsletter welcome ─────────────────────────────────────────────────────
 export async function sendNewsletterWelcome({ to }: { to: string }) {
   return resend.emails.send({
     from: FROM, to,

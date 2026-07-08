@@ -434,8 +434,8 @@ export default function SellPage() {
                 },
                 {
                   key: 'ack_survey_policy' as const,
-                  title: 'Independent Pre-Auction Survey',
-                  body: 'I agree that Breck Yacht Group will select and coordinate an independent marine surveyor on behalf of buyers. The surveyor\'s findings will be published with my listing. I understand BYG absorbs the survey cost.',
+                  title: 'Survey Deposit Policy',
+                  body: 'Upon approval of my listing, I agree to pay a non-refundable survey deposit (based on vessel length: under 30ft, 30–39ft, or 40ft+) before BYG schedules the independent pre-auction survey. This deposit is non-refundable under all circumstances. If my vessel passes survey and the auction closes, the deposit is credited back to me at closing. If the survey reveals issues and I choose not to proceed, the deposit covers the survey cost in full. BYG assumes no liability for survey findings.',
                 },
                 {
                   key: 'ack_listing_agreement' as const,
