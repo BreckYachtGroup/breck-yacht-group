@@ -132,7 +132,7 @@ export default function SellPage() {
         </p>
         <h1 className="text-4xl font-bold mb-3">List Your Vessel</h1>
         <p className="text-white/50 text-sm max-w-md mx-auto leading-relaxed">
-          7-day auction · $0 seller commission if sold · independent pre-auction survey included
+          7-day auction · 1% seller commission · independent pre-auction survey included
         </p>
       </div>
 
