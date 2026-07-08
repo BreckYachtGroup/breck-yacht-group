@@ -7,26 +7,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendIntakeAlertEmail, sendIntakeConfirmationEmail } from '@/lib/auction-emails'
-
-function authClient() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { get: (n) => cookieStore.get(n)?.value } }
-  )
-}
 
 export async function POST(req: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────────
   const token = req.headers.get('authorization')?.replace('Bearer ', '')
-  const { data: { user }, error: authError } = token
-    ? await supabaseAdmin.auth.getUser(token)
-    : await authClient().auth.getUser()
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
