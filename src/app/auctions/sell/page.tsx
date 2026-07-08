@@ -64,7 +64,7 @@ function Select({ value, onChange, children, placeholder }: {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function SellPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router   = useRouter()
   const [form,    setForm]    = useState<Form>(INIT)
   const [step,    setStep]    = useState(1)
@@ -72,10 +72,10 @@ export default function SellPage() {
   const [error,   setError]   = useState<string | null>(null)
   const [done,    setDone]    = useState(false)
 
-  // Redirect if not logged in
+  // Wait for auth to resolve before redirecting
   useEffect(() => {
-    if (user === null) router.push('/account/login?redirect=/auctions/sell')
-  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!authLoading && !user) router.push('/account/login?redirect=/auctions/sell')
+  }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) =>
     setForm(p => ({ ...p, [k]: v }))
@@ -113,6 +113,11 @@ export default function SellPage() {
     }
   }
 
+  if (authLoading) return (
+    <div style={{ backgroundColor: '#0a0a0a' }} className="min-h-screen flex items-center justify-center">
+      <p className="text-white/30 text-sm tracking-widest uppercase animate-pulse">Loading…</p>
+    </div>
+  )
   if (!user) return null
 
   if (done) return <SuccessScreen />
