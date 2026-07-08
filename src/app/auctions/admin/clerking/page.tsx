@@ -22,30 +22,43 @@ import { supabase } from '@/lib/supabase'
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type ClerkingRecord = {
-  id:                     string
-  platform_event_id:      string
-  auction_id:             string
-  auction_slug:           string
-  sale_date:              string
-  vessel_year:            number
-  vessel_make:            string
-  vessel_model:           string
-  vessel_length_ft:       number | null
-  vessel_hin:             string | null
-  vessel_condition:       string | null
-  vessel_description:     string | null
-  winner_name:            string
-  winner_email:           string
-  winner_address:         string
-  winner_bidder_number:   number
-  hammer_price:           number
-  buyer_premium_pct:      number
-  buyer_premium_amount:   number
-  total_buyer_paid:       number
-  proceeds_delivered_at:  string | null
-  proceeds_delivery_notes: string | null
-  created_at:             string
-  created_by_email:       string | null
+  id:                       string
+  platform_event_id:        string
+  auction_id:               string
+  auction_slug:             string
+  sale_date:                string
+  vessel_year:              number
+  vessel_make:              string
+  vessel_model:             string
+  vessel_length_ft:         number | null
+  vessel_hin:               string | null
+  vessel_condition:         string | null
+  vessel_description:       string | null
+  // Winner (buyer)
+  winner_name:              string
+  winner_email:             string
+  winner_address:           string
+  winner_bidder_number:     number
+  // Buyer financials
+  hammer_price:             number
+  buyer_premium_pct:        number
+  buyer_premium_amount:     number
+  total_buyer_paid:         number
+  proceeds_delivered_at:    string | null
+  proceeds_delivery_notes:  string | null
+  // Seller
+  seller_name:              string | null
+  seller_email:             string | null
+  seller_commission_waived: boolean
+  seller_commission_pct:    number
+  seller_commission_amount: number | null
+  seller_net_proceeds:      number | null
+  listing_fee_amount:       number | null
+  survey_deposit_amount:    number | null
+  survey_deposit_status:    string | null   // 'held' | 'refunded' | 'forfeited'
+  survey_deposit_resolved_at: string | null
+  created_at:               string
+  created_by_email:         string | null
 }
 
 type PendingAuction = {
@@ -97,10 +110,13 @@ export default function ClerkingPage() {
   const [expandedId,    setExpandedId]    = useState<string | null>(null)
 
   // Create record modal state
-  const [createModal,   setCreateModal]   = useState<PendingAuction | null>(null)
-  const [createAddress, setCreateAddress] = useState('')
-  const [creating,      setCreating]      = useState(false)
-  const [createError,   setCreateError]   = useState('')
+  const [createModal,            setCreateModal]            = useState<PendingAuction | null>(null)
+  const [createAddress,          setCreateAddress]          = useState('')
+  const [createCommissionWaived, setCreateCommissionWaived] = useState(false)
+  const [createListingFee,       setCreateListingFee]       = useState('')
+  const [createDepositAmount,    setCreateDepositAmount]    = useState('')
+  const [creating,               setCreating]               = useState(false)
+  const [createError,            setCreateError]            = useState('')
 
   // Proceeds delivery modal state
   const [proceedsModal,     setProceedsModal]     = useState<ClerkingRecord | null>(null)
@@ -149,8 +165,11 @@ export default function ClerkingPage() {
       method:  'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        auction_slug:   createModal.slug,
-        winner_address: createAddress.trim(),
+        auction_slug:             createModal.slug,
+        winner_address:           createAddress.trim(),
+        seller_commission_waived: createCommissionWaived,
+        listing_fee_amount:       createListingFee ? Number(createListingFee) : null,
+        survey_deposit_amount:    createDepositAmount ? Number(createDepositAmount) : null,
       }),
     })
     const d = await res.json()
@@ -163,6 +182,9 @@ export default function ClerkingPage() {
 
     setCreateModal(null)
     setCreateAddress('')
+    setCreateCommissionWaived(false)
+    setCreateListingFee('')
+    setCreateDepositAmount('')
     fetchRecords()
   }
 
@@ -461,10 +483,10 @@ export default function ClerkingPage() {
                           </div>
                         </div>
 
-                        {/* Financials */}
+                        {/* Buyer Financials */}
                         <div>
                           <p className="text-xs uppercase tracking-widest text-white/30 mb-3 font-semibold">
-                            Sale Financials
+                            Buyer Financials
                           </p>
                           <div className="space-y-1.5 text-white/70">
                             <p><span className="text-white/30">Hammer Price:</span>{' '}
@@ -479,6 +501,84 @@ export default function ClerkingPage() {
                             </p>
                             <p><span className="text-white/30">Platform Event ID:</span>{' '}
                               <span className="font-mono">{r.platform_event_id}</span></p>
+                          </div>
+                        </div>
+
+                        {/* Seller Financials */}
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-white/30 mb-3 font-semibold">
+                            Seller Financials
+                          </p>
+                          <div className="space-y-1.5 text-white/70">
+                            {r.seller_name && <p><span className="text-white/30">Seller:</span> {r.seller_name} {r.seller_email ? `· ${r.seller_email}` : ''}</p>}
+                            <p>
+                              <span className="text-white/30">Seller Commission:</span>{' '}
+                              {r.seller_commission_waived
+                                ? <span className="text-green-400 font-semibold">Waived — Listing Agreement Signed</span>
+                                : <span>{r.seller_commission_pct}% = {r.seller_commission_amount != null ? fmt(r.seller_commission_amount) : '—'}</span>
+                              }
+                              {/* Toggle commission waived inline */}
+                              <button
+                                className="ml-3 text-xs underline text-white/30 hover:text-white"
+                                onClick={async () => {
+                                  const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+                                  if (!session) return
+                                  await fetch('/api/auctions/admin/clerking', {
+                                    method: 'PATCH',
+                                    headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: r.id, seller_commission_waived: !r.seller_commission_waived }),
+                                  })
+                                  fetchRecords()
+                                }}
+                              >
+                                {r.seller_commission_waived ? 'Apply 1%' : 'Waive'}
+                              </button>
+                            </p>
+                            <p><span className="text-white/30">Seller Net Proceeds:</span>{' '}
+                              <span className="font-bold text-white">{r.seller_net_proceeds != null ? fmt(r.seller_net_proceeds) : '—'}</span>
+                            </p>
+                            {r.listing_fee_amount != null && (
+                              <p><span className="text-white/30">Listing Fee Paid:</span> {fmt(r.listing_fee_amount)}</p>
+                            )}
+                            {r.survey_deposit_amount != null && (
+                              <div className="pt-1">
+                                <p>
+                                  <span className="text-white/30">Survey Deposit:</span>{' '}
+                                  {fmt(r.survey_deposit_amount)}{' '}
+                                  <span className={`ml-1 px-1.5 py-0.5 text-xs font-bold uppercase ${
+                                    r.survey_deposit_status === 'refunded'  ? 'bg-green-900 text-green-400' :
+                                    r.survey_deposit_status === 'forfeited' ? 'bg-red-900 text-red-400' :
+                                    'bg-yellow-900/50 text-yellow-400'
+                                  }`}>
+                                    {r.survey_deposit_status ?? 'held'}
+                                  </span>
+                                  {r.survey_deposit_status === 'held' && (
+                                    <span className="ml-2 gap-2 inline-flex">
+                                      {['refunded', 'forfeited'].map(s => (
+                                        <button key={s}
+                                          className="text-xs underline text-white/30 hover:text-white"
+                                          onClick={async () => {
+                                            const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+                                            if (!session) return
+                                            await fetch('/api/auctions/admin/clerking', {
+                                              method: 'PATCH',
+                                              headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ id: r.id, survey_deposit_status: s, survey_deposit_resolved_at: new Date().toISOString() }),
+                                            })
+                                            fetchRecords()
+                                          }}
+                                        >
+                                          Mark {s}
+                                        </button>
+                                      ))}
+                                    </span>
+                                  )}
+                                </p>
+                                {r.survey_deposit_resolved_at && (
+                                  <p className="text-xs text-white/30 mt-0.5">{fmtDateTime(r.survey_deposit_resolved_at)}</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -581,9 +681,73 @@ export default function ClerkingPage() {
                   className="w-full px-3 py-2 text-sm text-white placeholder-white/20 resize-none"
                   style={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
                 />
+                <p className="text-white/20 text-xs mt-1">Required by state auctioneer regulations.</p>
+              </div>
+
+              {/* Seller Commission Toggle */}
+              <div>
+                <label className="text-xs uppercase tracking-wider text-white/40 block mb-2">
+                  Seller Commission
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { label: '1% Collected', value: false },
+                    { label: 'Waived — Listing Agreement Signed', value: true },
+                  ].map(opt => (
+                    <button
+                      key={String(opt.value)}
+                      onClick={() => setCreateCommissionWaived(opt.value)}
+                      className="px-3 py-2 text-xs font-semibold transition-colors"
+                      style={{
+                        backgroundColor: createCommissionWaived === opt.value
+                          ? (opt.value ? '#1a3a1a' : '#2a1a1a')
+                          : '#1a1a1a',
+                        color: createCommissionWaived === opt.value
+                          ? (opt.value ? '#6fcf6f' : '#cf6f6f')
+                          : 'rgba(255,255,255,0.3)',
+                        border: '1px solid ' + (createCommissionWaived === opt.value ? 'rgba(255,255,255,0.2)' : '#222'),
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
                 <p className="text-white/20 text-xs mt-1">
-                  Required by state auctioneer regulations. Street, city, state, zip.
+                  {createCommissionWaived
+                    ? `Seller keeps full hammer price (${createModal ? fmt(createModal.current_bid) : '—'})`
+                    : `1% = ${createModal ? fmt(createModal.current_bid * 0.01) : '—'} deducted from proceeds`}
                 </p>
+              </div>
+
+              {/* Listing Fee + Deposit */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-white/40 block mb-1.5">
+                    Listing Fee Collected ($)
+                  </label>
+                  <input
+                    type="number" min="0" step="1"
+                    value={createListingFee}
+                    onChange={e => setCreateListingFee(e.target.value)}
+                    placeholder="e.g. 250"
+                    className="w-full px-3 py-2 text-sm text-white placeholder-white/20"
+                    style={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-white/40 block mb-1.5">
+                    Survey Deposit Amount ($)
+                  </label>
+                  <input
+                    type="number" min="0" step="1"
+                    value={createDepositAmount}
+                    onChange={e => setCreateDepositAmount(e.target.value)}
+                    placeholder="e.g. 500"
+                    className="w-full px-3 py-2 text-sm text-white placeholder-white/20"
+                    style={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                  />
+                  <p className="text-white/20 text-xs mt-1">Refundable at auction close</p>
+                </div>
               </div>
 
               {createError && (

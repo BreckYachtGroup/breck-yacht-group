@@ -85,8 +85,11 @@ export async function POST(req: NextRequest) {
   const {
     auction_slug,
     winner_address,
-    proceeds_delivered_at = null,
-    proceeds_delivery_notes = null,
+    proceeds_delivered_at         = null,
+    proceeds_delivery_notes       = null,
+    seller_commission_waived      = false,
+    listing_fee_amount            = null,
+    survey_deposit_amount         = null,
   } = body
 
   // ── Fetch the auction listing ───────────────────────────────────────────────
@@ -142,11 +145,33 @@ export async function POST(req: NextRequest) {
 
   const platformEventId = eventIdRow as string
 
+  // ── Look up seller from intake submission ──────────────────────────────────
+  const { data: intake } = await supabaseAdmin
+    .from('auction_intake_submissions')
+    .select('user_id')
+    .eq('listing_id', auction.id)
+    .maybeSingle()
+
+  let sellerName  = null
+  let sellerEmail = null
+  if (intake?.user_id) {
+    const { data: { user: sellerAuth } } = await supabaseAdmin.auth.admin.getUserById(intake.user_id)
+    const { data: sellerProfile }         = await supabaseAdmin
+      .from('buyer_profiles').select('name').eq('id', intake.user_id).maybeSingle()
+    sellerName  = sellerProfile?.name  || sellerAuth?.email?.split('@')[0] || null
+    sellerEmail = sellerAuth?.email    || null
+  }
+
   // ── Calculate financials ───────────────────────────────────────────────────
-  const hammerPrice          = auction.current_bid
-  const buyerPremiumPct      = 5.00
-  const buyerPremiumAmount   = Number((hammerPrice * buyerPremiumPct / 100).toFixed(2))
-  const totalBuyerPaid       = Number((hammerPrice + buyerPremiumAmount).toFixed(2))
+  const hammerPrice              = auction.current_bid
+  const buyerPremiumPct          = 5.00
+  const buyerPremiumAmount       = Number((hammerPrice * buyerPremiumPct / 100).toFixed(2))
+  const totalBuyerPaid           = Number((hammerPrice + buyerPremiumAmount).toFixed(2))
+
+  // Seller commission: 1% standard, waived if listing agreement signed
+  const sellerCommissionPct      = seller_commission_waived ? 0 : 1.00
+  const sellerCommissionAmount   = Number((hammerPrice * sellerCommissionPct / 100).toFixed(2))
+  const sellerNetProceeds        = Number((hammerPrice - sellerCommissionAmount).toFixed(2))
 
   // ── Insert clerking record ─────────────────────────────────────────────────
   const { data: record, error: insertErr } = await supabaseAdmin
@@ -179,9 +204,20 @@ export async function POST(req: NextRequest) {
       buyer_premium_amount: buyerPremiumAmount,
       total_buyer_paid:     totalBuyerPaid,
 
-      // Proceeds
-      proceeds_delivered_at:    proceeds_delivered_at,
-      proceeds_delivery_notes:  proceeds_delivery_notes,
+      // Seller
+      seller_name:                  sellerName,
+      seller_email:                 sellerEmail,
+      seller_commission_waived:     seller_commission_waived,
+      seller_commission_pct:        sellerCommissionPct,
+      seller_commission_amount:     sellerCommissionAmount,
+      seller_net_proceeds:          sellerNetProceeds,
+      listing_fee_amount:           listing_fee_amount,
+      survey_deposit_amount:        survey_deposit_amount,
+      survey_deposit_status:        'held',
+
+      // Buyer proceeds
+      proceeds_delivered_at:        proceeds_delivered_at,
+      proceeds_delivery_notes:      proceeds_delivery_notes,
 
       created_by_email: adminUser?.email ?? 'admin',
     })
@@ -208,14 +244,40 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 })
   }
 
-  const { id, proceeds_delivered_at, proceeds_delivery_notes } = body
+  const {
+    id,
+    proceeds_delivered_at,
+    proceeds_delivery_notes,
+    seller_commission_waived,
+    survey_deposit_status,
+    survey_deposit_resolved_at,
+  } = body
+
+  // Build update payload — only include fields that were sent
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates: Record<string, any> = {}
+
+  if (proceeds_delivered_at   !== undefined) updates.proceeds_delivered_at   = proceeds_delivered_at
+  if (proceeds_delivery_notes !== undefined) updates.proceeds_delivery_notes = proceeds_delivery_notes
+  if (survey_deposit_status   !== undefined) updates.survey_deposit_status   = survey_deposit_status
+  if (survey_deposit_resolved_at !== undefined) updates.survey_deposit_resolved_at = survey_deposit_resolved_at
+
+  // Recalculate commission if waived status changed
+  if (seller_commission_waived !== undefined) {
+    // Fetch current hammer price to recalculate
+    const { data: current } = await supabaseAdmin
+      .from('auction_clerking_records').select('hammer_price').eq('id', id).single()
+    const hammer = current?.hammer_price ?? 0
+    const pct    = seller_commission_waived ? 0 : 1.00
+    updates.seller_commission_waived  = seller_commission_waived
+    updates.seller_commission_pct     = pct
+    updates.seller_commission_amount  = Number((hammer * pct / 100).toFixed(2))
+    updates.seller_net_proceeds       = Number((hammer - updates.seller_commission_amount).toFixed(2))
+  }
 
   const { data, error } = await supabaseAdmin
     .from('auction_clerking_records')
-    .update({
-      proceeds_delivered_at:   proceeds_delivered_at ?? null,
-      proceeds_delivery_notes: proceeds_delivery_notes ?? null,
-    })
+    .update(updates)
     .eq('id', id)
     .select()
     .single()
