@@ -164,7 +164,15 @@ export default function AuctionDetailPage() {
     })
     const d = await res.json()
     setSubmitting(false)
-    if (!res.ok) { setBidError(d.error ?? 'Bid failed.'); return }
+    if (!res.ok) {
+      // Profile incomplete — send them to their profile to fill it out
+      if (d.profileIncomplete) {
+        router.push('/account/profile')
+        return
+      }
+      setBidError(d.error ?? 'Bid failed.')
+      return
+    }
     setBidSuccess(`Bid of ${fmt(amount)} placed!`)
     setBidAmount('')
     fetchAll()

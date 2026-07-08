@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
-type Profile = { name: string; phone: string; looking_for: string; timeline: string; username: string }
+type Profile = {
+  name: string; phone: string; looking_for: string; timeline: string; username: string
+  address_line1: string; address_city: string; address_state: string; address_zip: string
+}
 
 const TIMELINES = [
   'Just browsing',
@@ -22,8 +25,12 @@ export default function AccountProfilePage() {
   const { user, loading: authLoading, signOut } = useAuth()
   const router = useRouter()
 
+  const [profileComplete, setProfileComplete] = useState(true)
   const [profile,  setProfile]  = useState<Profile | null>(null)
-  const [form,     setForm]     = useState<Profile>({ name: '', phone: '', looking_for: '', timeline: '', username: '' })
+  const [form,     setForm]     = useState<Profile>({
+    name: '', phone: '', looking_for: '', timeline: '', username: '',
+    address_line1: '', address_city: '', address_state: '', address_zip: '',
+  })
   const [editing,  setEditing]  = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [saveMsg,  setSaveMsg]  = useState<string | null>(null)
@@ -44,9 +51,13 @@ export default function AccountProfilePage() {
       })
         .then(r => r.json())
         .then(d => {
-          const p = d.profile ?? { name: '', phone: '', looking_for: '', timeline: '', username: '' }
+          const p = d.profile ?? {
+            name: '', phone: '', looking_for: '', timeline: '', username: '',
+            address_line1: '', address_city: '', address_state: '', address_zip: '',
+          }
           setProfile(p)
           setForm(p)
+          setProfileComplete(d.isComplete ?? false)
           setLoading(false)
         })
         .catch(() => setLoading(false))
@@ -70,6 +81,10 @@ export default function AccountProfilePage() {
     if (res.ok) {
       setProfile({ ...form })
       setEditing(false)
+      // Recalculate completeness
+      const c = !!(form.name && form.phone && form.username &&
+        form.address_line1 && form.address_city && form.address_state && form.address_zip)
+      setProfileComplete(c)
       setSaveMsg('Changes saved.')
       setTimeout(() => setSaveMsg(null), 3000)
     } else {
@@ -117,6 +132,19 @@ export default function AccountProfilePage() {
       </div>
 
       <div className="max-w-lg mx-auto px-6 py-16 space-y-6">
+
+        {/* ── Profile completion banner ─────────────────────────────────────── */}
+        {!profileComplete && (
+          <div className="p-5 border-l-4 bg-amber-50" style={{ borderColor: '#c9a84c' }}>
+            <p className="text-sm font-semibold text-amber-800 mb-1">
+              ⚠ Complete your profile to bid or list a vessel
+            </p>
+            <p className="text-xs text-amber-700">
+              Name, phone, auction username, and full mailing address are required before
+              you can place bids or submit a vessel for auction.
+            </p>
+          </div>
+        )}
 
         {/* ── Quick links ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
@@ -189,12 +217,46 @@ export default function AccountProfilePage() {
                 <p className="text-xs text-gray-400 mt-1">Email cannot be changed here.</p>
               </div>
               <div>
-                <label className={labelCls}>Phone Number</label>
+                <label className={labelCls}>Phone Number *</label>
                 <input type="tel" value={form.phone}
                   onChange={e => set('phone', e.target.value)}
                   placeholder="(561) 000-0000"
                   className={inputCls} />
               </div>
+
+              {/* ── Mailing Address (required for bidding & clerking records) ── */}
+              <div>
+                <label className={labelCls}>
+                  Mailing Address *
+                  <span className="ml-1 font-normal normal-case tracking-normal text-gray-400">
+                    (required to bid or sell)
+                  </span>
+                </label>
+                <input type="text" value={form.address_line1}
+                  onChange={e => set('address_line1', e.target.value)}
+                  placeholder="Street address"
+                  className={`${inputCls} mb-2`} />
+                <div className="grid grid-cols-3 gap-2">
+                  <input type="text" value={form.address_city}
+                    onChange={e => set('address_city', e.target.value)}
+                    placeholder="City"
+                    className={`${inputCls} col-span-1`} />
+                  <input type="text" value={form.address_state}
+                    onChange={e => set('address_state', e.target.value.toUpperCase())}
+                    placeholder="FL"
+                    maxLength={2}
+                    className={`${inputCls} col-span-1`} />
+                  <input type="text" value={form.address_zip}
+                    onChange={e => set('address_zip', e.target.value)}
+                    placeholder="ZIP"
+                    maxLength={10}
+                    className={`${inputCls} col-span-1`} />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Required by Florida auctioneer licensing regulations. Kept private.
+                </p>
+              </div>
+
               <div>
                 <label className={labelCls}>What are you looking for?</label>
                 <textarea value={form.looking_for}
@@ -257,6 +319,17 @@ export default function AccountProfilePage() {
               <div>
                 <p className={labelCls}>Phone</p>
                 <p className="font-medium">{profile?.phone || <span className="text-gray-400 italic">Not set</span>}</p>
+              </div>
+              <div>
+                <p className={labelCls}>Mailing Address</p>
+                {profile?.address_line1 ? (
+                  <p className="font-medium">
+                    {profile.address_line1}<br />
+                    {profile.address_city}, {profile.address_state} {profile.address_zip}
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-600 font-medium">⚠ Address required to bid or sell</p>
+                )}
               </div>
               <div>
                 <p className={labelCls}>Looking For</p>

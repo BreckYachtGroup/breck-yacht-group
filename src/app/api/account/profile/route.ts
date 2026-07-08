@@ -31,7 +31,13 @@ export async function GET(req: NextRequest) {
     .maybeSingle() // returns null (not an error) when no row exists
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ profile: data ?? null })
+
+  // isComplete = all fields required to bid or list a vessel are present
+  const p = data
+  const isComplete = !!(p?.name && p?.phone && p?.username &&
+    p?.address_line1 && p?.address_city && p?.address_state && p?.address_zip)
+
+  return NextResponse.json({ profile: data ?? null, isComplete })
 }
 
 // ── POST /api/account/profile ─────────────────────────────────────────────────
@@ -39,7 +45,8 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, phone, looking_for, timeline, username } = await req.json()
+  const { name, phone, looking_for, timeline, username,
+          address_line1, address_city, address_state, address_zip } = await req.json()
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -65,14 +72,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Compose full address string for clerking records
+  const line1 = address_line1?.trim() || null
+  const city  = address_city?.trim()  || null
+  const state = address_state?.trim() || null
+  const zip   = address_zip?.trim()   || null
+  const composedAddress = (line1 && city && state && zip)
+    ? `${line1}, ${city}, ${state} ${zip}`
+    : null
+
   const { error } = await supabaseAdmin
     .from('buyer_profiles')
     .upsert({
-      id:          user.id,
-      name:        name.trim(),
-      phone:       phone?.trim()       || null,
-      looking_for: looking_for?.trim() || null,
-      timeline:    timeline?.trim()    || null,
+      id:            user.id,
+      name:          name.trim(),
+      phone:         phone?.trim()       || null,
+      looking_for:   looking_for?.trim() || null,
+      timeline:      timeline?.trim()    || null,
+      address_line1: line1,
+      address_city:  city,
+      address_state: state,
+      address_zip:   zip,
+      address:       composedAddress,  // denormalized for clerking records
       ...(username !== undefined ? { username: username.trim() || null } : {}),
     })
 

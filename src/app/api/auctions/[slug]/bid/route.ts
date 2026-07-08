@@ -38,13 +38,32 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid bid amount.' }, { status: 400 })
   }
 
-  // ── Look up bidder's display username ──────────────────────────────────────
-  // Done before the RPC so the username is passed into the atomic transaction.
+  // ── Fetch bidder profile + enforce completeness gate ──────────────────────
+  // Profile must be fully complete (name, phone, username, full address)
+  // before any bid is accepted. This ensures clerking records can always be
+  // populated with accurate winner information.
   const { data: bidderProfile } = await supabaseAdmin
     .from('buyer_profiles')
-    .select('username, name')
+    .select('username, name, phone, address_line1, address_city, address_state, address_zip')
     .eq('id', user.id)
     .maybeSingle()
+
+  const profileComplete = !!(
+    bidderProfile?.name &&
+    bidderProfile?.phone &&
+    bidderProfile?.username &&
+    bidderProfile?.address_line1 &&
+    bidderProfile?.address_city &&
+    bidderProfile?.address_state &&
+    bidderProfile?.address_zip
+  )
+
+  if (!profileComplete) {
+    return NextResponse.json({
+      error:             'Complete your profile before bidding.',
+      profileIncomplete: true,
+    }, { status: 403 })
+  }
 
   const bidderUsername = bidderProfile?.username
     || bidderProfile?.name?.split(' ')[0]
