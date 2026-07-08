@@ -50,12 +50,13 @@ function CountdownPill({ endsAt, status }: { endsAt: string; status: string }) {
 }
 
 export default function WatchlistPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router   = useRouter()
   const [auctions, setAuctions] = useState<Auction[]>([])
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { router.push('/account/login'); return }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -66,7 +67,7 @@ export default function WatchlistPage() {
         .then(d => { setAuctions(d.auctions ?? []); setLoading(false) })
         .catch(() => setLoading(false))
     })
-  }, [user]) // eslint-disable-line
+  }, [user, authLoading]) // eslint-disable-line
 
   return (
     <div style={{ backgroundColor: '#f8f6f1' }} className="min-h-screen">

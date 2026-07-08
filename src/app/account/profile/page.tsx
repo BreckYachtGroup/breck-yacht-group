@@ -19,7 +19,7 @@ const inputCls = "w-full px-4 py-3 border border-gray-200 text-sm focus:outline-
 const labelCls = "block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5"
 
 export default function AccountProfilePage() {
-  const { user, signOut } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const router = useRouter()
 
   const [profile,  setProfile]  = useState<Profile | null>(null)
@@ -34,6 +34,7 @@ export default function AccountProfilePage() {
   const set = (k: keyof Profile, v: string) => setForm(p => ({ ...p, [k]: v }))
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { router.push('/account/login'); return }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,7 +51,7 @@ export default function AccountProfilePage() {
         })
         .catch(() => setLoading(false))
     })
-  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     if (!form.name.trim()) return

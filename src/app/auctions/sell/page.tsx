@@ -591,7 +591,7 @@ function SuccessScreen() {
             'We review your submission and confirm listing eligibility',
             'We schedule an independent pre-auction survey at your location',
             'Your 7-day auction goes live once the survey is complete',
-            'You owe $0 in seller commission if your boat sells',
+            'A 1% seller commission applies at closing (waived if you signed the 1-year listing agreement)',
           ].map((step, i) => (
             <div key={i} className="flex gap-3 text-sm text-white/60">
               <span className="text-[#c9a84c] font-bold flex-shrink-0">{i + 1}.</span>

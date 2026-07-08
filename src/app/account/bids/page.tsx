@@ -18,12 +18,13 @@ function fmtDate(ts: string) {
 }
 
 export default function BidHistoryPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router   = useRouter()
   const [auctions, setAuctions] = useState<AuctionBid[]>([])
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { router.push('/account/login'); return }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -34,7 +35,7 @@ export default function BidHistoryPage() {
         .then(d => { setAuctions(d.auctions ?? []); setLoading(false) })
         .catch(() => setLoading(false))
     })
-  }, [user]) // eslint-disable-line
+  }, [user, authLoading]) // eslint-disable-line
 
   const active = auctions.filter(a => a.status === 'active')
   const ended  = auctions.filter(a => a.status !== 'active')
