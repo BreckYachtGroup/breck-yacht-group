@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -21,7 +22,9 @@ type Form = {
   // Notes
   seller_notes: string
   // Agreements
-  ack_listing_fee: boolean; ack_survey_policy: boolean; ack_listing_agreement: boolean
+  ack_listing_fee: boolean; ack_survey_policy: boolean
+  ack_auction_terms: boolean       // required — 7-day auction agreement
+  ack_listing_agreement: boolean   // optional — 1-year agreement, waives 1% seller commission
 }
 
 const INIT: Form = {
@@ -32,7 +35,8 @@ const INIT: Form = {
   reserve_price: '', current_location: '', storage_type: '',
   title_status: '', has_existing_survey: false, desired_start_window: '',
   seller_notes: '',
-  ack_listing_fee: false, ack_survey_policy: false, ack_listing_agreement: false,
+  ack_listing_fee: false, ack_survey_policy: false,
+  ack_auction_terms: false, ack_listing_agreement: false,
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -49,15 +53,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+const OPTION_STYLE = { backgroundColor: '#0f0f0f', color: 'white' }
+
 function Select({ value, onChange, children, placeholder }: {
   value: string; onChange: (v: string) => void
   children: React.ReactNode; placeholder?: string
 }) {
+  // Force dark bg on options — native <select> dropdowns ignore Tailwind's bg-white/5
+  const styledOptions = React.Children.map(children, child =>
+    React.isValidElement(child)
+      ? React.cloneElement(child as React.ReactElement<React.OptionHTMLAttributes<HTMLOptionElement>>, { style: OPTION_STYLE })
+      : child
+  )
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className={`${inputCls} appearance-none`}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {children}
+      style={{ backgroundColor: '#0f0f0f', color: value ? 'white' : 'rgba(255,255,255,0.35)' }}
+      className="w-full px-4 py-3 border border-white/10 text-sm focus:outline-none focus:border-[#c9a84c] transition-colors appearance-none rounded">
+      {placeholder && <option value="" style={{ ...OPTION_STYLE, color: 'rgba(255,255,255,0.4)' }}>{placeholder}</option>}
+      {styledOptions}
     </select>
   )
 }
@@ -424,25 +437,27 @@ export default function SellPage() {
               ))}
             </div>
 
-            {/* Agreement checkboxes */}
+            {/* ── Required agreements ─────────────────────────────────────── */}
             <div className="space-y-5">
-              {[
+              <p className="text-xs uppercase tracking-widest text-white/40">Required Agreements</p>
+
+              {([
                 {
                   key: 'ack_listing_fee' as const,
-                  title: '$500 Listing Fee',
-                  body: 'I understand a $500 non-refundable listing fee is due upon approval. This covers platform setup and is credited toward any auction-related costs.',
+                  title: '$500 Non-Refundable Listing Fee',
+                  body: 'I understand a $500 non-refundable listing fee is due upon approval. This covers platform setup, photography coordination, and listing preparation.',
                 },
                 {
                   key: 'ack_survey_policy' as const,
                   title: 'Survey Deposit Policy',
-                  body: 'Upon approval of my listing, I agree to pay a non-refundable survey deposit (based on vessel length: under 30ft, 30–39ft, or 40ft+) before BYG schedules the independent pre-auction survey. This deposit is non-refundable under all circumstances. If my vessel passes survey and the auction closes, the deposit is credited back to me at closing. If the survey reveals issues and I choose not to proceed, the deposit covers the survey cost in full. BYG assumes no liability for survey findings.',
+                  body: 'Upon approval of my listing, I agree to pay a non-refundable survey deposit (tiered by vessel length: under 30ft, 30–39ft, or 40ft+) before BYG schedules the independent pre-auction survey. This deposit is non-refundable under all circumstances. If my vessel passes survey and the auction closes, the deposit is credited back to me at closing. If the survey reveals issues and I choose not to proceed, the deposit covers the survey cost in full. BYG assumes no liability for survey findings.',
                 },
                 {
-                  key: 'ack_listing_agreement' as const,
-                  title: '1-Year Listing Agreement',
-                  body: 'I understand that by submitting this form I am entering a 1-year exclusive listing agreement with Breck Yacht Group. If the 7-day auction does not result in a sale, BYG will list the vessel on the traditional market at 8–9% commission. Early termination requires reimbursement of out-of-pocket costs and is subject to a 90–180 day protection period.',
+                  key: 'ack_auction_terms' as const,
+                  title: '7-Day Auction Agreement',
+                  body: 'I agree to list my vessel in a 7-day timed online auction conducted by Breck Yacht Group. I understand that a 1% seller commission is due at closing, and that buyers pay a 5% buyer\'s premium on top of the hammer price. All bids are binding. BYG reserves the right to reject any bid that does not meet platform standards.',
                 },
-              ].map(({ key, title, body }) => (
+              ] as const).map(({ key, title, body }) => (
                 <label key={key}
                   className={`flex gap-4 p-5 border rounded cursor-pointer transition-colors ${
                     form[key] ? 'border-[#c9a84c]/50 bg-[#c9a84c]/5' : 'border-white/10 hover:border-white/20'
@@ -458,6 +473,42 @@ export default function SellPage() {
               ))}
             </div>
 
+            {/* ── Optional: 1-Year Listing Agreement ──────────────────────────── */}
+            <div>
+              <p className="text-xs uppercase tracking-widest text-white/40 mb-3">Optional — Commission Waiver</p>
+              <label className={`flex gap-4 p-5 border rounded cursor-pointer transition-colors ${
+                form.ack_listing_agreement
+                  ? 'border-[#c9a84c] bg-[#c9a84c]/8'
+                  : 'border-white/10 hover:border-white/20'
+              }`}>
+                <input type="checkbox" checked={form.ack_listing_agreement}
+                  onChange={e => set('ack_listing_agreement', e.target.checked)}
+                  className="w-4 h-4 mt-0.5 accent-[#c9a84c] flex-shrink-0" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-white">1-Year Listing Agreement</p>
+                    <span className="text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: '#c9a84c20', color: '#c9a84c' }}>
+                      Waives 1% Seller Commission
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/50 leading-relaxed">
+                    By signing this optional 1-year exclusive listing agreement with Breck Yacht Group, as a show of
+                    good faith and loyalty, BYG will waive the 1% seller commission upon a successful auction sale.
+                    If the 7-day auction does not result in a sale, the vessel will automatically transition to the
+                    BYG traditional brokerage program at 8–9% commission for the remainder of the year — no additional
+                    paperwork required. Early termination requires reimbursement of out-of-pocket costs (survey,
+                    photography) and is subject to a 90–180 day protection period.
+                  </p>
+                  {form.ack_listing_agreement && (
+                    <p className="text-xs mt-2 font-semibold" style={{ color: '#c9a84c' }}>
+                      ✓ Your 1% seller commission will be waived if your vessel sells at auction.
+                    </p>
+                  )}
+                </div>
+              </label>
+            </div>
+
             {error && (
               <p className="text-sm text-red-400 bg-red-900/20 border border-red-800/30 rounded px-4 py-3">
                 {error}
@@ -471,8 +522,8 @@ export default function SellPage() {
               </button>
               <button
                 onClick={() => {
-                  if (!form.ack_listing_fee || !form.ack_survey_policy || !form.ack_listing_agreement) {
-                    setError('Please accept all three agreements before submitting.')
+                  if (!form.ack_listing_fee || !form.ack_survey_policy || !form.ack_auction_terms) {
+                    setError('Please accept all three required agreements before submitting.')
                     return
                   }
                   handleSubmit()

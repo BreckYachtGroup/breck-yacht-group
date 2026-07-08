@@ -30,15 +30,16 @@ export async function POST(req: NextRequest) {
     reserve_price, current_location, storage_type, title_status,
     has_existing_survey, desired_start_window,
     seller_notes,
-    ack_listing_fee, ack_survey_policy, ack_listing_agreement,
+    ack_listing_fee, ack_survey_policy, ack_auction_terms, ack_listing_agreement,
   } = body
 
   // Basic validation
   if (!make || !model || !year) {
     return NextResponse.json({ error: 'Make, model, and year are required.' }, { status: 400 })
   }
-  if (!ack_listing_fee || !ack_survey_policy || !ack_listing_agreement) {
-    return NextResponse.json({ error: 'All agreement checkboxes must be accepted.' }, { status: 400 })
+  // ack_listing_agreement is OPTIONAL — waives 1% seller commission
+  if (!ack_listing_fee || !ack_survey_policy || !ack_auction_terms) {
+    return NextResponse.json({ error: 'All required agreement checkboxes must be accepted.' }, { status: 400 })
   }
 
   // ── Fetch seller profile for emails ─────────────────────────────────────────
@@ -101,9 +102,10 @@ export async function POST(req: NextRequest) {
       has_existing_survey: has_existing_survey || false,
       desired_start_window,
       seller_notes,
-      ack_listing_fee:      ack_listing_fee      || false,
-      ack_survey_policy:    ack_survey_policy     || false,
-      ack_listing_agreement: ack_listing_agreement || false,
+      ack_listing_fee:       ack_listing_fee       || false,
+      ack_survey_policy:     ack_survey_policy      || false,
+      ack_auction_terms:     ack_auction_terms      || false,  // requires supabase-intake-auction-terms.sql
+      ack_listing_agreement: ack_listing_agreement  || false,  // optional — waives 1% seller commission
       listing_id: listing?.id || null,
     })
     .select('id')
