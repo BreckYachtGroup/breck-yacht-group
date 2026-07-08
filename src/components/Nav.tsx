@@ -161,6 +161,9 @@ export default function Nav() {
                 <Link href="/about/testimonials" onClick={closeAll} className="block px-5 py-3 text-sm tracking-wider uppercase text-white/80 hover:text-white hover:bg-white/10 transition-colors">
                   Testimonials
                 </Link>
+                <Link href="/careers" onClick={closeAll} className="block px-5 py-3 text-sm tracking-wider uppercase text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                  Careers
+                </Link>
               </div>
             )}
           </div>
@@ -279,6 +282,9 @@ export default function Nav() {
                 <Link href="/about/testimonials" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">
                   Testimonials
                 </Link>
+                <Link href="/careers" onClick={closeAll} className="block py-3 text-sm tracking-wider uppercase text-white/60 hover:text-white transition-colors">
+                  Careers
+                </Link>
               </div>
             )}
           </div>
@@ -299,22 +305,4 @@ export default function Nav() {
                   className="text-xs tracking-wider uppercase text-white/60 hover:text-white transition-colors"
                 >
                   Sign Out
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/account/login"
-                onClick={closeAll}
-                className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors"
-                style={{ color: '#c9a84c' }}
-              >
-                Sign In / Create Account
-              </Link>
-            )
-          )}
-        </div>
-      )}
-    </nav>
-  )
-}
-
+                </butt
