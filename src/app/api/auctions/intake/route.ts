@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendIntakeAlertEmail, sendIntakeConfirmationEmail } from '@/lib/auction-emails'
+import { auctionSchedule } from '@/lib/auction-time'
 
 export async function POST(req: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -80,9 +81,12 @@ export async function POST(req: NextRequest) {
         seller_notes ? `Seller notes: ${seller_notes}` : '',
       ].filter(Boolean).join('\n\n') || 'Draft — details pending intake review.',
       images: [],
-      // Auction dates TBD — admin sets these on approval
-      starts_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      ends_at:   new Date(Date.now() + 37 * 24 * 60 * 60 * 1000).toISOString(),
+      // Draft dates: schedule ~30 days out at 8 PM ET so the admin edit form
+      // is pre-populated correctly. Admin adjusts the exact date before going live.
+      ...(() => {
+        const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        return auctionSchedule(thirtyDaysOut)
+      })(),
     })
     .select('id')
     .single()

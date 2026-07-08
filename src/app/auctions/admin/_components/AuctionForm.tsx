@@ -19,25 +19,49 @@ type Props = {
   onError: (msg: string) => void
 }
 
-// Returns a datetime-local string (YYYY-MM-DDTHH:mm) set to 5:00 PM Eastern
-// on a given date offset from today, accounting for ET offset (UTC-5 or UTC-4 DST).
-function defaultAt5pmET(daysFromNow: number): string {
+/**
+ * Returns a datetime-local string (YYYY-MM-DDTHH:mm) for the next 8:00 PM ET,
+ * offset by `extraDays` additional days. Uses Intl to handle EST/EDT correctly.
+ *
+ * datetime-local inputs expect the browser's *local* time, so we convert
+ * the UTC result back to local wall-clock time for the input value.
+ */
+function next8pmETLocal(extraDays = 0): string {
+  const tz = 'America/New_York'
   const now = new Date()
-  // Determine ET offset: EDT = UTC-4 (Mar–Nov), EST = UTC-5 (Nov–Mar)
-  // Simple check: if the local Date shows DST is active for NY, use -4
-  const jan = new Date(now.getFullYear(), 0, 1).getTimezoneOffset()
-  const jul = new Date(now.getFullYear(), 6, 1).getTimezoneOffset()
-  const etOffset = Math.min(jan, jul) === 240 ? -4 : -5 // 240 = UTC-4
 
-  const target = new Date(now)
-  target.setDate(target.getDate() + daysFromNow)
-  // Build a date string at 17:00 ET expressed in UTC
-  const utcHour = 17 - etOffset // e.g. 17 - (-4) = 21 UTC during EDT
-  target.setUTCHours(utcHour, 0, 0, 0)
+  // What ET hour is it right now?
+  const etHour = Number(
+    new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now)
+  )
 
-  // Format as datetime-local value (YYYY-MM-DDTHH:mm) in local time
+  // If already past 8 PM ET, bump to tomorrow; then add any extra days
+  const daysAhead = (etHour >= 20 ? 1 : 0) + extraDays
+
+  const base = new Date(now)
+  base.setDate(base.getDate() + daysAhead)
+
+  const etDateStr = base.toLocaleDateString('en-CA', { timeZone: tz }) // YYYY-MM-DD
+
+  // Try EDT (UTC-4) then EST (UTC-5); setUTCHours(24/25) rolls over correctly
+  for (const off of [4, 5]) {
+    const candidate = new Date(`${etDateStr}T00:00:00Z`)
+    candidate.setUTCHours(20 + off, 0, 0, 0)
+
+    const check = Number(
+      new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(candidate)
+    )
+    if (check === 20) {
+      // Format in browser local time for the datetime-local input
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${candidate.getFullYear()}-${pad(candidate.getMonth() + 1)}-${pad(candidate.getDate())}T${pad(candidate.getHours())}:00`
+    }
+  }
+
+  // Fallback — should never hit this
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}T${pad(target.getHours())}:00`
+  const d = new Date(); d.setHours(20, 0, 0, 0); d.setDate(d.getDate() + extraDays)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T20:00`
 }
 
 const DEFAULT: AuctionFormValues = {
@@ -45,8 +69,8 @@ const DEFAULT: AuctionFormValues = {
   make: '', model: '', year: '', length_ft: '',
   location: '', condition: 'Used', hours: '', vin: '',
   status: 'draft',
-  starts_at: defaultAt5pmET(0),   // today at 5 PM ET
-  ends_at:   defaultAt5pmET(7),   // 7 days from now at 5 PM ET
+  starts_at: next8pmETLocal(0),   // next 8 PM ET
+  ends_at:   next8pmETLocal(7),   // 7 days after next 8 PM ET
   starting_bid: '', reserve_price: '',
   images: [],
 }
