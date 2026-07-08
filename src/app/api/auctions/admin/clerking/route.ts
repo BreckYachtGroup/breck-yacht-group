@@ -288,3 +288,22 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ record: data })
 }
+
+// ── DELETE /api/auctions/admin/clerking ──────────────────────────────────────
+// Permanently deletes a clerking record. Admin only.
+// Body: { id }
+export async function DELETE(req: NextRequest) {
+  const adminUser = await getAdminUser(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json().catch(() => null)
+  if (!body?.id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+  const { error } = await supabaseAdmin
+    .from('auction_clerking_records')
+    .delete()
+    .eq('id', body.id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}

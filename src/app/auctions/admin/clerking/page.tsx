@@ -644,10 +644,28 @@ export default function ClerkingPage() {
                         )}
                       </div>
 
-                      <p className="text-white/20 text-xs mt-6">
-                        Record created {fmtDateTime(r.created_at)}
-                        {r.created_by_email ? ` by ${r.created_by_email}` : ''}
-                      </p>
+                      <div className="flex items-center justify-between mt-6">
+                        <p className="text-white/20 text-xs">
+                          Record created {fmtDateTime(r.created_at)}
+                          {r.created_by_email ? ` by ${r.created_by_email}` : ''}
+                        </p>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Permanently delete clerking record ${r.platform_event_id}? This cannot be undone and may violate state record-keeping requirements if this is a real sale.`)) return
+                            const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession()
+                            if (!session) return
+                            await fetch('/api/auctions/admin/clerking', {
+                              method: 'DELETE',
+                              headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: r.id }),
+                            })
+                            fetchRecords()
+                          }}
+                          className="text-xs text-red-400/50 hover:text-red-400 underline underline-offset-2 transition-colors"
+                        >
+                          Delete Record
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
