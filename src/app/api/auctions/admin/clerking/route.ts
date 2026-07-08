@@ -50,14 +50,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Also return a list of sold/ended auctions that don't have a clerking record yet
-  const { data: needsRecord } = await supabaseAdmin
+  // Fetch all sold/ended auctions with at least one bid
+  const { data: completedAuctions } = await supabaseAdmin
     .from('auction_listings')
     .select('id, slug, title, make, model, year, length_ft, vin, condition, description, ends_at, current_bid, current_bidder_id, bid_count')
     .in('status', ['sold', 'ended'])
-    .not('id', 'in', `(${(data ?? []).map(r => `'${r.auction_id}'`).join(',') || "'00000000-0000-0000-0000-000000000000'"})`)
     .gt('bid_count', 0)
     .order('ends_at', { ascending: false })
+
+  // Filter out any that already have a clerking record (done in JS to avoid PostgREST subquery issues)
+  const existingAuctionIds = new Set((data ?? []).map(r => r.auction_id).filter(Boolean))
+  const needsRecord = (completedAuctions ?? []).filter(a => !existingAuctionIds.has(a.id))
 
   return NextResponse.json({
     records:     data ?? [],
