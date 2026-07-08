@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await supabaseAdmin
     .from('buyer_profiles')
     .select('name, phone')
-    .eq('user_id', user.id)
-    .single()
+    .eq('id', user.id)   // buyer_profiles PK is `id`, not `user_id`
+    .maybeSingle()
 
   const sellerName  = profile?.name  || user.email?.split('@')[0] || 'Seller'
   const sellerPhone = profile?.phone || ''
