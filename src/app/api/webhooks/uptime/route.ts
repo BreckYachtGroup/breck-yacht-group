@@ -31,22 +31,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // ── Parse Better Uptime payload ─────────────────────────────────────────────
-  // Better Uptime sends: { monitor: {...}, incident: { started_at, resolved_at, ... } }
-  const body = await req.json().catch(() => null)
-  if (!body) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  // ── Parse payload — supports UptimeRobot (form-encoded) and Better Stack (JSON)
+  const contentType = req.headers.get('content-type') ?? ''
+  let isRecovery = false
+  let startedAt: string | null = null
+  const resolvedAt = new Date().toISOString()
 
-  // Only act on recovery events (monitor coming back up)
-  // Better Uptime sends "monitor.status" = "up" on recovery
-  const monitorStatus = body?.monitor?.status ?? body?.status
-  if (monitorStatus !== 'up' && monitorStatus !== 'recovered') {
-    // Downtime alert — acknowledge but take no action (we can't extend during outage)
-    return NextResponse.json({ received: true, action: 'none', reason: 'not a recovery event' })
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    // UptimeRobot sends form-encoded data
+    // alertType: 1=Down, 2=Up, 3=SSL expiry
+    const text   = await req.text()
+    const params = new URLSearchParams(text)
+    const alertType = params.get('alertType')
+    isRecovery = alertType === '2'  // "2" = monitor back up
+    // UptimeRobot doesn't send outage start time — we'll default to 5-min (their check interval)
+    if (isRecovery) {
+      startedAt = new Date(Date.now() - 5 * 60_000).toISOString()
+    }
+  } else {
+    // Better Stack / generic JSON payload
+    const body = await req.json().catch(() => null)
+    if (!body) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    const monitorStatus = body?.monitor?.status ?? body?.status
+    isRecovery = monitorStatus === 'up' || monitorStatus === 'recovered'
+    startedAt  = body?.incident?.started_at ?? body?.started_at ?? null
   }
 
-  // ── Calculate outage duration ────────────────────────────────────────────────
-  const startedAt  = body?.incident?.started_at  ?? body?.started_at
-  const resolvedAt = body?.incident?.resolved_at ?? body?.resolved_at ?? new Date().toISOString()
+  if (!isRecovery) {
+    return NextResponse.json({ received: true, action: 'none', reason: 'not a recovery event' })
+  }
 
   let outageDurationMs = 0
   if (startedAt) {
