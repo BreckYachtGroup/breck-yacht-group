@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const {
     year, make, model, length_ft, hull_type,
+    hin,
     engine_count, engine_make, engine_model, engine_year, engine_hours,
     drive_type, fuel_type,
     condition, known_issues, recent_maintenance,
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
       year,
       length_ft:    length_ft || null,
       location:     current_location || '',
+      condition:    condition || null,
+      hours:        engine_hours || null,      // map intake engine_hours → listing hours
+      vin:          hin || null,               // map intake HIN → listing vin field
       status:       'draft',
       starting_bid: reserve_price ? Math.round(reserve_price * 0.7) : 0,
       reserve_price: reserve_price || null,
@@ -95,6 +99,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       status:  listing ? 'draft_created' : 'pending',
       year, make, model, length_ft, hull_type,
+      hin: hin || null,
       engine_count, engine_make, engine_model, engine_year, engine_hours,
       drive_type, fuel_type,
       condition, known_issues, recent_maintenance,

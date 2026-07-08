@@ -10,7 +10,7 @@ import Link from 'next/link'
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Form = {
   // Vessel basics
-  year: string; make: string; model: string; length_ft: string; hull_type: string
+  year: string; make: string; model: string; length_ft: string; hull_type: string; hin: string
   // Engines
   engine_count: string; engine_make: string; engine_model: string
   engine_year: string; engine_hours: string; drive_type: string; fuel_type: string
@@ -28,7 +28,7 @@ type Form = {
 }
 
 const INIT: Form = {
-  year: '', make: '', model: '', length_ft: '', hull_type: '',
+  year: '', make: '', model: '', length_ft: '', hull_type: '', hin: '',
   engine_count: '1', engine_make: '', engine_model: '',
   engine_year: '', engine_hours: '', drive_type: '', fuel_type: '',
   condition: '', known_issues: '', recent_maintenance: '',
@@ -217,6 +217,21 @@ export default function SellPage() {
                 </Select>
               </Field>
             </div>
+
+            {/* HIN — Hull Identification Number */}
+            <Field label="HIN — Hull Identification Number">
+              <input
+                type="text"
+                placeholder="e.g. ABC12345D101 (12 characters, found on transom)"
+                value={form.hin}
+                onChange={e => set('hin', e.target.value.toUpperCase())}
+                maxLength={20}
+                className={inputCls}
+              />
+              <p className="text-white/30 text-xs mt-1.5">
+                Located on the starboard side of the transom. Required before listing goes live.
+              </p>
+            </Field>
 
             <StepNav
               onNext={() => {
