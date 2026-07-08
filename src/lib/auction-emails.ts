@@ -339,7 +339,70 @@ export async function sendDepositRequestEmail({
   })
 }
 
-// ── 9. Newsletter welcome ─────────────────────────────────────────────────────
+// ── 9. Outage recovery alert — sent to all active auction bidders/watchers ────
+export async function sendOutageRecoveryEmail({
+  to,
+  outageDurationMinutes,
+  affectedAuctions,
+}: {
+  to: string
+  outageDurationMinutes: number
+  affectedAuctions: { title: string; slug: string; newEndsAt: string }[]
+}) {
+  const auctionRows = affectedAuctions.map(a => `
+    <tr>
+      <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#333;">
+        <a href="${SITE}/auctions/${a.slug}" style="color:#0c1f3f;font-weight:bold;text-decoration:none;">${a.title}</a>
+      </td>
+      <td style="padding:12px 16px;border:1px solid #e8e8e0;color:#c9a84c;font-weight:bold;white-space:nowrap;">
+        ${fmtDate(a.newEndsAt)}
+      </td>
+    </tr>
+  `).join('')
+
+  return resend.emails.send({
+    from: FROM, to,
+    subject: `BYG Auctions is back online — auction times extended`,
+    html: base(`
+      <p style="margin:0 0 8px;color:#c9a84c;font-size:12px;text-transform:uppercase;letter-spacing:0.15em;">Service Update</p>
+      <h2 style="margin:0 0 16px;color:#0c1f3f;font-size:22px;">We're back online.</h2>
+      <p style="color:#333;line-height:1.7;">
+        Breck Yacht Group Auctions experienced a service interruption of approximately
+        <strong>${outageDurationMinutes} minute${outageDurationMinutes !== 1 ? 's' : ''}</strong>.
+        The platform is now fully operational.
+      </p>
+      <p style="color:#333;line-height:1.7;">
+        In accordance with our
+        <a href="${SITE}/auctions/terms#outage-policy" style="color:#0c1f3f;">outage policy</a>,
+        all active auctions you are participating in have been extended to ensure no bidder
+        is disadvantaged by the interruption. Updated end times are shown below:
+      </p>
+
+      <table style="width:100%;border-collapse:collapse;margin:24px 0;">
+        <tr>
+          <th style="padding:10px 16px;background:#0c1f3f;color:#c9a84c;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;text-align:left;">Auction</th>
+          <th style="padding:10px 16px;background:#0c1f3f;color:#c9a84c;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;text-align:left;">New End Time (ET)</th>
+        </tr>
+        ${auctionRows}
+      </table>
+
+      <p style="color:#333;font-size:13px;line-height:1.7;padding:16px;background:#f9f9f6;border-left:3px solid #c9a84c;">
+        All bids placed before the outage remain valid. The auction will proceed normally
+        from the new end time, including the standard 3-minute anti-snipe extension for
+        any bids placed in the final minutes.
+      </p>
+
+      ${goldBtn(`${SITE}/auctions`, 'Return to Auctions →')}
+
+      <p style="margin-top:24px;color:#999;font-size:12px;line-height:1.7;">
+        Questions? Call or text us at <a href="tel:5617235636" style="color:#999;">(561) 723-5636</a>
+        or reply to this email.
+      </p>
+    `),
+  })
+}
+
+// ── 10. Newsletter welcome ────────────────────────────────────────────────────
 export async function sendNewsletterWelcome({ to }: { to: string }) {
   return resend.emails.send({
     from: FROM, to,
