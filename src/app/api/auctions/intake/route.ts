@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
     to:         user.email!,
     sellerName,
     year, make, model,
+    ackListingAgreement: ack_listing_agreement || false,
   }).catch(() => {})
 
   return NextResponse.json({ success: true, intakeId: intake.id, listingId: listing?.id || null })

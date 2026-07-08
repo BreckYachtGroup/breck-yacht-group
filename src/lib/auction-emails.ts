@@ -239,10 +239,17 @@ export async function sendIntakeAlertEmail({
 
 // ── 7. Seller intake — confirmation to seller ─────────────────────────────────
 export async function sendIntakeConfirmationEmail({
-  to, sellerName, year, make, model,
+  to, sellerName, year, make, model, ackListingAgreement = false,
 }: {
   to: string; sellerName: string; year: number; make: string; model: string
+  ackListingAgreement?: boolean
 }) {
+  // Step 4 of "what happens next" varies based on whether seller opted into the
+  // 1-year listing agreement (which waives the 1% seller commission).
+  const commissionLine = ackListingAgreement
+    ? `<span style="color:#1a7a1a;font-weight:600;">Your 1% seller commission is waived.</span> A 1-year listing agreement will be sent for your signature before your auction goes live. If your vessel sells at auction, you keep the full sale price minus standard closing costs — no commission to BYG.`
+    : `If your vessel sells at auction, a 1% seller commission applies at closing.`
+
   return resend.emails.send({
     from: FROM, to,
     subject: `We received your listing request — ${year} ${make} ${model}`,
@@ -256,7 +263,7 @@ export async function sendIntakeConfirmationEmail({
         1. Our team reviews your submission and confirms eligibility.<br/>
         2. We schedule an independent pre-auction survey at your boat's location.<br/>
         3. Once the survey is complete, your 7-day auction goes live.<br/>
-        4. If your boat sells at auction, a 1% seller commission applies at closing.
+        4. ${commissionLine}
       </p>
       <p style="color:#333;line-height:1.7;margin-top:24px;">Questions? Call or text us at <a href="tel:5617235636" style="color:#0c1f3f;">(561) 723-5636</a> or reply to this email.</p>
       ${goldBtn(`${SITE}/auctions`, 'Browse Live Auctions')}
