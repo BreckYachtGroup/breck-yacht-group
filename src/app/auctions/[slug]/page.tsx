@@ -23,6 +23,16 @@ type FeedItem =
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n: number)  { return '$' + n.toLocaleString() }
+function ReserveIndicator({ reserve, current }: { reserve: number | null; current: number }) {
+  if (!reserve) return null
+  const met = current >= reserve
+  return (
+    <p className="text-xs mt-1 font-semibold uppercase tracking-wider"
+      style={{ color: met ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>
+      {met ? '✓ Reserve Met' : 'Reserve Not Met'}
+    </p>
+  )
+}
 function maskBidder(id: string) { return 'Bidder ' + id.slice(0, 4).toUpperCase() }
 function fmtTime(ts: string) {
   return new Date(ts).toLocaleString('en-US', {
@@ -411,6 +421,7 @@ export default function AuctionDetailPage() {
                 {auction.bid_count > 0 && (
                   <p className="text-white/30 text-xs">{auction.bid_count} bid{auction.bid_count !== 1 ? 's' : ''}</p>
                 )}
+                <ReserveIndicator reserve={auction.reserve_price} current={auction.current_bid} />
                 {isWinner && isActive && (
                   <p className="text-green-400 text-xs mt-1 font-semibold uppercase tracking-wider">✓ You are the highest bidder</p>
                 )}
@@ -625,6 +636,7 @@ export default function AuctionDetailPage() {
                 {auction.bid_count > 0 && (
                   <p className="text-white/30 text-xs">{auction.bid_count} bid{auction.bid_count !== 1 ? 's' : ''}</p>
                 )}
+                <ReserveIndicator reserve={auction.reserve_price} current={auction.current_bid} />
                 {isWinner && isActive && (
                   <p className="text-green-400 text-xs mt-1 font-semibold uppercase tracking-wider">✓ You are the highest bidder</p>
                 )}

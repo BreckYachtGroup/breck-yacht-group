@@ -10,6 +10,11 @@ type Auction = {
   starting_bid: number; current_bid: number; bid_count: number; created_at: string
 }
 type Bid = { id: string; amount: number; created_at: string; bidder_email: string }
+type FlaggedComment = {
+  id: string; display_name: string; body: string | null; image_url: string | null
+  flag_count: number; like_count: number; created_at: string
+  auction_listings: { title: string; slug: string }
+}
 
 const STATUS_COLORS: Record<string, string> = {
   draft:     '#555',
@@ -32,8 +37,11 @@ export default function AuctionAdminPage() {
   const [bids,     setBids]     = useState<Bid[]>([])
   const [bidsTitle, setBidsTitle] = useState('')
   const [bidsLoading, setBidsLoading] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [statusUpdating, setStatusUpdating] = useState<string | null>(null)
+  const [deleting,        setDeleting]        = useState<string | null>(null)
+  const [statusUpdating,  setStatusUpdating]  = useState<string | null>(null)
+  const [flagged,         setFlagged]         = useState<FlaggedComment[]>([])
+  const [flaggedLoading,  setFlaggedLoading]  = useState(false)
+  const [deletingComment, setDeletingComment] = useState<string | null>(null)
 
   // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -59,7 +67,32 @@ export default function AuctionAdminPage() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { if (token) fetchAuctions() }, [token, fetchAuctions])
+  useEffect(() => { if (token) { fetchAuctions(); fetchFlagged() } }, [token, fetchAuctions])
+
+  // ── Fetch flagged comments ─────────────────────────────────────────────────
+  async function fetchFlagged() {
+    if (!token) return
+    setFlaggedLoading(true)
+    const res = await fetch('/api/auctions/admin/flagged-comments', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const d = await res.json()
+    setFlagged(d.comments ?? [])
+    setFlaggedLoading(false)
+  }
+
+  // ── Delete flagged comment ─────────────────────────────────────────────────
+  async function deleteComment(id: string) {
+    if (!token || !confirm('Permanently delete this comment?')) return
+    setDeletingComment(id)
+    await fetch('/api/auctions/admin/flagged-comments', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    setDeletingComment(null)
+    fetchFlagged()
+  }
 
   // ── Update status ──────────────────────────────────────────────────────────
   async function updateStatus(slug: string, status: string) {
@@ -215,6 +248,59 @@ export default function AuctionAdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Flagged Comments */}
+      <div className="px-8 pb-12">
+        <div className="flex items-center gap-4 mb-4" style={{ borderTop: '1px solid #222', paddingTop: '32px' }}>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/60">Flagged Comments</h2>
+          {flagged.length > 0 && (
+            <span className="px-2 py-0.5 text-xs font-bold rounded"
+              style={{ backgroundColor: '#7a1a1a', color: '#fff' }}>{flagged.length}</span>
+          )}
+        </div>
+
+        {flaggedLoading ? (
+          <p className="text-white/30 text-sm animate-pulse">Loading…</p>
+        ) : flagged.length === 0 ? (
+          <p className="text-white/20 text-sm">No flagged comments.</p>
+        ) : (
+          <div className="space-y-3">
+            {flagged.map(c => (
+              <div key={c.id} className="p-4 flex gap-4 items-start"
+                style={{ backgroundColor: '#111', border: '1px solid #2a1a1a' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1 flex-wrap">
+                    <span className="font-semibold text-white text-sm">{c.display_name}</span>
+                    <a href={`/auctions/${c.auction_listings.slug}`} target="_blank"
+                      className="text-xs underline" style={{ color: '#c9a84c' }}>
+                      {c.auction_listings.title} ↗
+                    </a>
+                    <span className="text-xs text-white/30">
+                      {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  {c.body && <p className="text-white/60 text-sm leading-relaxed">{c.body}</p>}
+                  {c.image_url && (
+                    <img src={c.image_url} alt="attachment" className="mt-2 h-20 object-cover"
+                      style={{ border: '1px solid #333' }} />
+                  )}
+                  <div className="flex gap-4 mt-2">
+                    <span className="text-xs text-red-400 font-semibold">⚑ {c.flag_count} flag{c.flag_count !== 1 ? 's' : ''}</span>
+                    {c.like_count > 0 && <span className="text-xs text-white/30">👍 {c.like_count}</span>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deleteComment(c.id)}
+                  disabled={deletingComment === c.id}
+                  className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
+                  style={{ backgroundColor: '#7a1a1a', color: '#fff' }}>
+                  {deletingComment === c.id ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
