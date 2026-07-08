@@ -149,7 +149,7 @@ export default function CareersClient() {
             {[
               'Florida yacht salesperson\'s license (or willingness to obtain one — we\'ll help)',
               'Proven track record in marine, automotive, or high-ticket sales',
-              'Self-motivated, client-first mindset — you run your own book',
+              'Self-motivated, client-first mindset with a team-oriented approach',
               'Comfortable representing a premium brand to high-net-worth buyers',
               'Based in or able to work the Florida market',
             ].map(req => (
