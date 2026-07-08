@@ -6,6 +6,7 @@ import NewsletterSignup from '@/components/NewsletterSignup'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import MetaPixel from '@/components/MetaPixel'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 export const metadata: Metadata = {
   manifest: '/manifest.json',
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Analytics />
           <SpeedInsights />
           <MetaPixel />
+          <GoogleAnalytics />
         </Providers>
       </body>
     </html>
