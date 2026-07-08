@@ -213,6 +213,12 @@ export default function AuctionAdminPage() {
             View Public Page ↗
           </a>
           <button
+            onClick={() => router.push('/auctions/admin/clerking')}
+            className="px-4 py-2 text-sm text-white/50 hover:text-white border border-white/20 hover:border-white/40 transition-colors"
+          >
+            Clerking Records
+          </button>
+          <button
             onClick={() => router.push('/auctions/admin/create')}
             className="px-5 py-2 text-sm font-bold uppercase tracking-wider"
             style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}
