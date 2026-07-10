@@ -129,7 +129,7 @@ export default function Nav() {
             )}
           </div>
 
-          <Link href="/#contact" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
+          <Link href="/contact" className="text-white/80 hover:text-white text-sm tracking-wider uppercase transition-colors">
             Contact
           </Link>
 
@@ -204,7 +204,7 @@ export default function Nav() {
             )}
           </div>
 
-          <Link href="/#contact" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Contact</Link>
+          <Link href="/contact" onClick={closeAll} className="px-2 py-4 text-sm tracking-wider uppercase text-white/80 hover:text-white transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Contact</Link>
 
           {!loading && (
             user ? (
