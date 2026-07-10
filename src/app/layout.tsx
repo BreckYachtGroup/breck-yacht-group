@@ -76,3 +76,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           </div>
         </footer>
+          <Analytics />
+          <SpeedInsights />
+          <MetaPixel />
+          <GoogleAnalytics />
+        </Providers>
+      </body>
+    </html>
+  )
+}
