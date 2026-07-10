@@ -95,7 +95,7 @@ export async function sendWinnerEmail({
       <h2 style="margin:0 0 24px;color:#0c1f3f;font-size:22px;">${auctionTitle}</h2>
       <p style="color:#333;line-height:1.7;">Congratulations ${winnerName}!</p>
       <p style="color:#333;line-height:1.7;">Your bid of <strong style="color:#c9a84c;">${fmt(winningBid)}</strong> won the auction. Our team will be in touch within 24 hours to discuss next steps and coordinate the transaction.</p>
-      <p style="color:#333;line-height:1.7;">Questions in the meantime? Reply to this email or call us at <a href="tel:5617235636" style="color:#0c1f3f;">(561) 723-5636</a>.</p>
+      <p style="color:#333;line-height:1.7;">Questions in the meantime? Reply to this email or call us at <a href="tel:5612470838</a>.</p>
       ${goldBtn(`${SITE}/auctions/${auctionSlug}`, 'View Auction')}
       <p style="margin-top:32px;color:#999;font-size:12px;line-height:1.7;">As a reminder, all bids are binding per our <a href="${SITE}/auctions/terms" style="color:#999;">auction terms</a>.</p>
     `),
@@ -265,7 +265,7 @@ export async function sendIntakeConfirmationEmail({
         3. Once the survey is complete, your 7-day auction goes live.<br/>
         4. ${commissionLine}
       </p>
-      <p style="color:#333;line-height:1.7;margin-top:24px;">Questions? Call or text us at <a href="tel:5617235636" style="color:#0c1f3f;">(561) 723-5636</a> or reply to this email.</p>
+      <p style="color:#333;line-height:1.7;margin-top:24px;">Questions? Call or text us at <a href="tel:5612470838</a> or reply to this email.</p>
       ${goldBtn(`${SITE}/auctions`, 'Browse Live Auctions')}
     `),
   })
@@ -329,11 +329,11 @@ export async function sendDepositRequestEmail({
         never a third-party site. Breck Yacht Group will never ask you to pay via wire transfer,
         Zelle, Venmo, or Cash App. If you received this email from any address other than
         <strong>auctions@breckyachtgroup.com</strong>, do not click the link and contact us immediately
-        at <a href="tel:5617235636" style="color:#7a6a00;">(561) 723-5636</a>.
+        at <a href="tel:5612470838</a>.
       </p>
 
       <p style="margin-top:24px;color:#999;font-size:12px;line-height:1.7;">
-        Questions? Reply to this email or call us at <a href="tel:5617235636" style="color:#999;">(561) 723-5636</a>.
+        Questions? Reply to this email or call us at <a href="tel:5612470838</a>.
       </p>
     `),
   })
@@ -395,7 +395,7 @@ export async function sendOutageRecoveryEmail({
       ${goldBtn(`${SITE}/auctions`, 'Return to Auctions →')}
 
       <p style="margin-top:24px;color:#999;font-size:12px;line-height:1.7;">
-        Questions? Call or text us at <a href="tel:5617235636" style="color:#999;">(561) 723-5636</a>
+        Questions? Call or text us at <a href="tel:5612470838</a>
         or reply to this email.
       </p>
     `),

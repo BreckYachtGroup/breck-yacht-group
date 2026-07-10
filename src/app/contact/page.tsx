@@ -38,8 +38,8 @@ export default function ContactPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Phone</p>
-                <a href="tel:5617235636" className="text-lg font-semibold text-gray-900 hover:opacity-70 transition-opacity">
-                  (561) 723-5636
+                <a href="tel:5612470838" className="text-lg font-semibold text-gray-900 hover:opacity-70 transition-opacity">
+                  (561) 247-0838
                 </a>
               </div>
               <div>
@@ -81,7 +81,7 @@ export default function ContactPage() {
             </p>
             <p className="text-sm text-gray-600 leading-relaxed">
               We typically respond within a few hours during business hours.
-              For urgent inquiries, call us directly at (561) 723-5636.
+              For urgent inquiries, call us directly at (561) 247-0838.
             </p>
           </div>
         </div>

@@ -266,24 +266,4 @@ export default function CareersClient() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-4 text-sm font-bold uppercase tracking-widest text-white transition-opacity hover:opacity-80 disabled:opacity-50"
-                style={{ backgroundColor: '#0c1f3f' }}
-              >
-                {submitting ? 'Sending…' : 'Submit Application'}
-              </button>
-
-              <p className="text-xs text-gray-400 text-center">
-                Prefer to reach out directly?{' '}
-                <a href="mailto:austin@breckyachtgroup.com" className="underline">
-                  austin@breckyachtgroup.com
-                </a>{' '}
-                · (561) 723-5636
-              </p>
-            </form>
-          )}
-        </div>
-
-      </div>
-    </div>
-  )
-}
+                className="w-full py-4 text
