@@ -75,12 +75,12 @@ export default function AuctionTermsPage() {
             <li>A service interruption caused by factors outside Breck Yacht Group&apos;s reasonable control — including but not limited to third-party infrastructure failures, internet outages, or acts of God — will be handled with the same extension policy on a best-efforts basis.</li>
             <li>No bid placed prior to a verified outage will be invalidated due to the interruption. All bids recorded before the outage remain valid and binding.</li>
           </ul>
-          <p className="mt-3">Breck Yacht Group&apos;s platform uptime status can be verified at any time at <a href="/api/health" className="underline text-gray-900">breckyachtgroup.com/api/health</a>. In the event of a suspected outage, bidders are encouraged to contact us directly at <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or <a href="tel:5612470838"</a>.</p>
+          <p className="mt-3">Breck Yacht Group&apos;s platform uptime status can be verified at any time at <a href="/api/health" className="underline text-gray-900">breckyachtgroup.com/api/health</a>. In the event of a suspected outage, bidders are encouraged to contact us directly at <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or <a href="tel:5612470838">(561) 247-0838</a>.</p>
         </section>
 
         <section>
           <h2 className="text-lg font-bold text-gray-900 mb-3">12. Contact</h2>
-          <p>Questions regarding these terms may be directed to <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or by calling <a href="tel:5612470838"</a>.</p>
+          <p>Questions regarding these terms may be directed to <a href="mailto:austin@breckyachtgroup.com" className="underline text-gray-900">austin@breckyachtgroup.com</a> or by calling <a href="tel:5612470838">(561) 247-0838</a>.</p>
         </section>
 
         <div className="pt-6 border-t border-gray-200">

@@ -57,4 +57,9 @@ export async function POST(req: NextRequest) {
       `,
     })
 
-    r
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Careers form error:', error)
+    return NextResponse.json({ error: 'Failed to send application.' }, { status: 500 })
+  }
+}

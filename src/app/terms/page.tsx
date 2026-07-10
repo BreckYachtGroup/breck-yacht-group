@@ -57,7 +57,7 @@ export default function TermsPage() {
           <div className="mt-3">
             <p><strong>Breck Yacht Group LLC</strong></p>
             <p>Palm Beach, FL</p>
-            <p>Phone: <a href="tel:5612470838"</a></p>
+            <p>Phone: <a href="tel:5612470838">(561) 247-0838</a></p>
             <p>Email: <a href="mailto:austin@breckyachtgroup.com" style={{ color: '#c9a84c' }}>austin@breckyachtgroup.com</a></p>
           </div>
         </section>
