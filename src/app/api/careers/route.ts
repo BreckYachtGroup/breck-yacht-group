@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       name, email, phone,
       licensed,       // 'yes' | 'no'
       experience,     // years / background
+      marine,         // marine industry background
       territory,      // where they work
       pitch,          // why they want to join
     } = await req.json()
@@ -43,6 +44,8 @@ export async function POST(req: NextRequest) {
               <td style="padding:8px 0;">${licensed === 'yes' ? '✓ Licensed' : 'Not yet licensed'}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Experience</td>
               <td style="padding:8px 0;">${experience || '—'}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;">Marine Background</td>
+              <td style="padding:8px 0;">${marine || '—'}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Territory</td>
               <td style="padding:8px 0;">${territory || '—'}</td></tr>
         </table>

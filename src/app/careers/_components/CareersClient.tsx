@@ -32,7 +32,7 @@ const TIERS = [
 export default function CareersClient() {
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
-    licensed: '', experience: '', territory: '', pitch: '',
+    licensed: '', experience: '', marine: '', territory: '', pitch: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitted,  setSubmitted]  = useState(false)
@@ -124,8 +124,12 @@ export default function CareersClient() {
                 body: 'Tap into over 8,200 co-brokerage listings alongside our in-house inventory. You\'re never starting from zero.',
               },
               {
+                title: 'Back-office support',
+                body: 'We handle title and closing coordination, lead routing, and are available to walk you through any part of the deal — including survey questions. You focus on selling; we handle the rest.',
+              },
+              {
                 title: 'Clean, modern tools',
-                body: 'Real-time bidding technology, industry-leading listing platforms, and a premium brand that positions you to sell at the high end of the market.',
+                body: 'Real-time bidding technology, social media marketing, and a premium brand that positions you to sell at the high end of the market.',
               },
               {
                 title: 'Licensing support',
@@ -229,6 +233,14 @@ export default function CareersClient() {
                 <input type="text" value={form.experience}
                   onChange={e => set('experience', e.target.value)}
                   placeholder="e.g. 8 years marine sales, previously at MarineMax Fort Lauderdale"
+                  className={inputCls} />
+              </div>
+
+              <div>
+                <label className={labelCls}>Marine Industry Background</label>
+                <input type="text" value={form.marine}
+                  onChange={e => set('marine', e.target.value)}
+                  placeholder="e.g. lifelong boater, former captain, grew up fishing offshore"
                   className={inputCls} />
               </div>
 
