@@ -1,9 +1,10 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getSurveyTier, formatDeposit } from '@/lib/survey-tiers'
+import AdminTestimonials from '@/components/AdminTestimonials'
 
 type Auction = {
   id: string; slug: string; title: string; make: string; model: string
@@ -58,7 +59,7 @@ export default function AuctionAdminPage() {
   const [rejectingIntake,  setRejectingIntake]  = useState<string | null>(null)
   const [approvingIntake,  setApprovingIntake]  = useState<string | null>(null)
 
-  // ── Auth check ─────────────────────────────────────────────────────────────
+  // â”€â”€ Auth check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.replace('/account/login'); return }
@@ -69,7 +70,7 @@ export default function AuctionAdminPage() {
     })
   }, [router])
 
-  // ── Fetch all auctions ─────────────────────────────────────────────────────
+  // â”€â”€ Fetch all auctions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchAuctions = useCallback(async () => {
     if (!token) return
     setLoading(true)
@@ -84,7 +85,7 @@ export default function AuctionAdminPage() {
 
   useEffect(() => { if (token) { fetchAuctions(); fetchFlagged(); fetchIntakes() } }, [token, fetchAuctions])
 
-  // ── Fetch intake submissions ───────────────────────────────────────────────
+  // â”€â”€ Fetch intake submissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function fetchIntakes() {
     if (!token) return
     setIntakesLoading(true)
@@ -114,7 +115,7 @@ export default function AuctionAdminPage() {
     if (!res.ok) {
       alert('Approval failed: ' + (json.error ?? 'Unknown error'))
     } else {
-      alert(`✓ Approved — deposit request sent (${json.depositAmount}, ${json.tier})`)
+      alert(`âœ“ Approved â€” deposit request sent (${json.depositAmount}, ${json.tier})`)
     }
     fetchIntakes()
   }
@@ -131,7 +132,7 @@ export default function AuctionAdminPage() {
     fetchIntakes()
   }
 
-  // ── Fetch flagged comments ─────────────────────────────────────────────────
+  // â”€â”€ Fetch flagged comments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function fetchFlagged() {
     if (!token) return
     setFlaggedLoading(true)
@@ -143,7 +144,7 @@ export default function AuctionAdminPage() {
     setFlaggedLoading(false)
   }
 
-  // ── Delete flagged comment ─────────────────────────────────────────────────
+  // â”€â”€ Delete flagged comment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function deleteComment(id: string) {
     if (!token || !confirm('Permanently delete this comment?')) return
     setDeletingComment(id)
@@ -156,7 +157,7 @@ export default function AuctionAdminPage() {
     fetchFlagged()
   }
 
-  // ── Update status ──────────────────────────────────────────────────────────
+  // â”€â”€ Update status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function updateStatus(slug: string, status: string) {
     if (!token) return
     setStatusUpdating(slug)
@@ -169,7 +170,7 @@ export default function AuctionAdminPage() {
     fetchAuctions()
   }
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function deleteAuction(slug: string) {
     if (!token || !confirm('Delete this auction and all its bids? This cannot be undone.')) return
     setDeleting(slug)
@@ -181,7 +182,7 @@ export default function AuctionAdminPage() {
     fetchAuctions()
   }
 
-  // ── View bids ──────────────────────────────────────────────────────────────
+  // â”€â”€ View bids â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function viewBids(slug: string, title: string) {
     if (!token) return
     setBidsSlug(slug)
@@ -210,7 +211,7 @@ export default function AuctionAdminPage() {
         <div className="flex gap-3">
           <a href="/auctions" target="_blank"
             className="px-4 py-2 text-sm text-white/50 hover:text-white border border-white/20 hover:border-white/40 transition-colors">
-            View Public Page ↗
+            View Public Page â†—
           </a>
           <button
             onClick={() => router.push('/auctions/admin/clerking')}
@@ -232,7 +233,7 @@ export default function AuctionAdminPage() {
         {error && <p className="text-red-400 text-sm mb-6">{error}</p>}
 
         {loading ? (
-          <p className="text-white/30 text-sm animate-pulse">Loading auctions…</p>
+          <p className="text-white/30 text-sm animate-pulse">Loading auctionsâ€¦</p>
         ) : auctions.length === 0 ? (
           <div className="text-center py-24">
             <p className="text-white/30 text-lg mb-4">No auctions yet.</p>
@@ -301,14 +302,14 @@ export default function AuctionAdminPage() {
                         </button>
                         <a href={`/auctions/${a.slug}`} target="_blank"
                           className="text-xs text-white/50 hover:text-white underline underline-offset-2">
-                          View ↗
+                          View â†—
                         </a>
                         <button
                           onClick={() => deleteAuction(a.slug)}
                           disabled={deleting === a.slug}
                           className="text-xs text-red-400/60 hover:text-red-400 underline underline-offset-2 disabled:opacity-40"
                         >
-                          {deleting === a.slug ? 'Deleting…' : 'Delete'}
+                          {deleting === a.slug ? 'Deletingâ€¦' : 'Delete'}
                         </button>
                       </div>
                     </td>
@@ -333,7 +334,7 @@ export default function AuctionAdminPage() {
         </div>
 
         {intakesLoading ? (
-          <p className="text-white/30 text-sm animate-pulse">Loading…</p>
+          <p className="text-white/30 text-sm animate-pulse">Loadingâ€¦</p>
         ) : intakes.length === 0 ? (
           <p className="text-white/20 text-sm">No intake submissions yet.</p>
         ) : (
@@ -348,7 +349,7 @@ export default function AuctionAdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <span className="font-bold text-white">
-                        {s.year} {s.make} {s.model}{s.length_ft ? ` · ${s.length_ft}ft` : ''}
+                        {s.year} {s.make} {s.model}{s.length_ft ? ` Â· ${s.length_ft}ft` : ''}
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded font-semibold capitalize"
                         style={{
@@ -360,18 +361,18 @@ export default function AuctionAdminPage() {
                       {/* Survey tier + deposit badge */}
                       <span className="text-xs px-2 py-0.5 rounded"
                         style={{ backgroundColor: '#1a1a2a', color: '#8888cc' }}>
-                        {tier.label} · {deposit} deposit
+                        {tier.label} Â· {deposit} deposit
                       </span>
                       <span className="text-xs text-white/30">
                         {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 text-xs text-white/50 mb-3">
-                      <span>Seller: <span className="text-white/80">{s.buyer_profiles?.name || '—'}</span></span>
-                      <span>Phone: <span className="text-white/80">{s.buyer_profiles?.phone || '—'}</span></span>
-                      <span>Engines: <span className="text-white/80">{s.engine_count}x {s.engine_make}{s.engine_hours ? ` · ${s.engine_hours}hrs` : ''}</span></span>
-                      <span>Condition: <span className="text-white/80 capitalize">{s.condition || '—'}</span></span>
-                      <span>Location: <span className="text-white/80">{s.current_location || '—'}</span></span>
+                      <span>Seller: <span className="text-white/80">{s.buyer_profiles?.name || 'â€”'}</span></span>
+                      <span>Phone: <span className="text-white/80">{s.buyer_profiles?.phone || 'â€”'}</span></span>
+                      <span>Engines: <span className="text-white/80">{s.engine_count}x {s.engine_make}{s.engine_hours ? ` Â· ${s.engine_hours}hrs` : ''}</span></span>
+                      <span>Condition: <span className="text-white/80 capitalize">{s.condition || 'â€”'}</span></span>
+                      <span>Location: <span className="text-white/80">{s.current_location || 'â€”'}</span></span>
                       <span>Reserve: <span className="text-white/80" style={{ color: s.reserve_price ? '#c9a84c' : undefined }}>
                         {s.reserve_price ? '$' + s.reserve_price.toLocaleString() : 'Not specified'}
                       </span></span>
@@ -387,7 +388,7 @@ export default function AuctionAdminPage() {
                           target="_blank" rel="noopener noreferrer"
                           className="text-xs px-3 py-1 rounded font-semibold uppercase tracking-wider border transition-colors hover:border-white/40"
                           style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}>
-                          Preview ↗
+                          Preview â†—
                         </a>
                       </div>
                     )}
@@ -399,14 +400,14 @@ export default function AuctionAdminPage() {
                         disabled={approvingIntake === s.id}
                         className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider disabled:opacity-40"
                         style={{ backgroundColor: '#c9a84c', color: '#0c1f3f' }}>
-                        {approvingIntake === s.id ? 'Sending…' : `Approve & Request ${deposit}`}
+                        {approvingIntake === s.id ? 'Sendingâ€¦' : `Approve & Request ${deposit}`}
                       </button>
                       <button
                         onClick={() => rejectIntake(s.id)}
                         disabled={rejectingIntake === s.id}
                         className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
                         style={{ backgroundColor: '#3a1a1a', color: '#cf6f6f' }}>
-                        {rejectingIntake === s.id ? 'Rejecting…' : 'Reject'}
+                        {rejectingIntake === s.id ? 'Rejectingâ€¦' : 'Reject'}
                       </button>
                     </div>
                   )}
@@ -428,7 +429,7 @@ export default function AuctionAdminPage() {
         </div>
 
         {flaggedLoading ? (
-          <p className="text-white/30 text-sm animate-pulse">Loading…</p>
+          <p className="text-white/30 text-sm animate-pulse">Loadingâ€¦</p>
         ) : flagged.length === 0 ? (
           <p className="text-white/20 text-sm">No flagged comments.</p>
         ) : (
@@ -441,7 +442,7 @@ export default function AuctionAdminPage() {
                     <span className="font-semibold text-white text-sm">{c.display_name}</span>
                     <a href={`/auctions/${c.auction_listings.slug}`} target="_blank"
                       className="text-xs underline" style={{ color: '#c9a84c' }}>
-                      {c.auction_listings.title} ↗
+                      {c.auction_listings.title} â†—
                     </a>
                     <span className="text-xs text-white/30">
                       {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -453,8 +454,8 @@ export default function AuctionAdminPage() {
                       style={{ border: '1px solid #333' }} />
                   )}
                   <div className="flex gap-4 mt-2">
-                    <span className="text-xs text-red-400 font-semibold">⚑ {c.flag_count} flag{c.flag_count !== 1 ? 's' : ''}</span>
-                    {c.like_count > 0 && <span className="text-xs text-white/30">👍 {c.like_count}</span>}
+                    <span className="text-xs text-red-400 font-semibold">âš‘ {c.flag_count} flag{c.flag_count !== 1 ? 's' : ''}</span>
+                    {c.like_count > 0 && <span className="text-xs text-white/30">ðŸ‘ {c.like_count}</span>}
                   </div>
                 </div>
                 <button
@@ -462,7 +463,7 @@ export default function AuctionAdminPage() {
                   disabled={deletingComment === c.id}
                   className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-40"
                   style={{ backgroundColor: '#7a1a1a', color: '#fff' }}>
-                  {deletingComment === c.id ? 'Deleting…' : 'Delete'}
+                  {deletingComment === c.id ? 'Deletingâ€¦' : 'Delete'}
                 </button>
               </div>
             ))}
@@ -483,12 +484,12 @@ export default function AuctionAdminPage() {
                 <p className="text-xs text-white/30 uppercase tracking-wider mb-1">Bid History</p>
                 <p className="font-semibold text-white">{bidsTitle}</p>
               </div>
-              <button onClick={() => setBidsSlug(null)} className="text-white/40 hover:text-white text-2xl leading-none">×</button>
+              <button onClick={() => setBidsSlug(null)} className="text-white/40 hover:text-white text-2xl leading-none">Ã—</button>
             </div>
 
             <div className="px-6 py-4">
               {bidsLoading ? (
-                <p className="text-white/30 text-sm animate-pulse">Loading bids…</p>
+                <p className="text-white/30 text-sm animate-pulse">Loading bidsâ€¦</p>
               ) : bids.length === 0 ? (
                 <p className="text-white/30 text-sm">No bids placed yet.</p>
               ) : (
@@ -519,6 +520,9 @@ export default function AuctionAdminPage() {
           </div>
         </div>
       )}
+    
+      <div className="mt-16"><AdminTestimonials adminSecret={process.env.NEXT_PUBLIC_ADMIN_SECRET!} /></div>
     </div>
   )
 }
+
