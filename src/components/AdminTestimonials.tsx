@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
 interface Testimonial {
   id: string
@@ -12,16 +13,22 @@ interface Testimonial {
   created_at: string
 }
 
-export default function AdminTestimonials({ adminSecret }: { adminSecret: string }) {
+export default function AdminTestimonials() {
   const [items, setItems] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
   const [acting, setActing] = useState<string | null>(null)
 
+  async function getToken() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token ?? ''
+  }
+
   async function load() {
     setLoading(true)
+    const token = await getToken()
     const res = await fetch('/api/admin/testimonials', {
-      headers: { 'x-admin-secret': adminSecret },
+      headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
     setItems(Array.isArray(data) ? data : [])
@@ -32,9 +39,10 @@ export default function AdminTestimonials({ adminSecret }: { adminSecret: string
 
   async function act(id: string, status: 'approved' | 'rejected') {
     setActing(id)
+    const token = await getToken()
     await fetch('/api/admin/testimonials', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ id, status }),
     })
     setActing(null)

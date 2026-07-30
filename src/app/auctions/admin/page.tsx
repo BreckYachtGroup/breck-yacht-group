@@ -521,8 +521,9 @@ export default function AuctionAdminPage() {
         </div>
       )}
     
-      <div className="mt-16"><AdminTestimonials adminSecret={process.env.NEXT_PUBLIC_ADMIN_SECRET!} /></div>
+      <div className="mt-16"><AdminTestimonials /></div>
     </div>
   )
 }
+
 
