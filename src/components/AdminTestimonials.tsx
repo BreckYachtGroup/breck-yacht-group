@@ -126,7 +126,7 @@ export default function AdminTestimonials() {
                   <button onClick={() => del(t.id)} disabled={acting === t.id}
                     className="px-3 py-2 text-xs text-red-400 bg-red-50 rounded hover:bg-red-100 disabled:opacity-50"
                     title="Delete permanently">
-                    âœ•
+                    X
                   </button>
                 </div>
               </div>
@@ -137,3 +137,4 @@ export default function AdminTestimonials() {
     </div>
   )
 }
+
