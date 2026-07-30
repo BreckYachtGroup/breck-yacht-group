@@ -49,6 +49,19 @@ export default function AdminTestimonials() {
     load()
   }
 
+  async function del(id: string) {
+    if (!confirm('Permanently delete this testimonial?')) return
+    setActing(id)
+    const token = await getToken()
+    await fetch('/api/admin/testimonials', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    })
+    setActing(null)
+    load()
+  }
+
   const filtered = filter === 'all' ? items : items.filter(i => i.status === filter)
   const pendingCount = items.filter(i => i.status === 'pending').length
 
@@ -95,18 +108,27 @@ export default function AdminTestimonials() {
                   <p className="text-sm text-gray-700 leading-relaxed">{t.content}</p>
                   <p className="text-xs text-gray-300 mt-3">{new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
-                {t.status === 'pending' && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => act(t.id, 'approved')} disabled={acting === t.id} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#0c1f3f' }}>Approve</button>
-                    <button onClick={() => act(t.id, 'rejected')} disabled={acting === t.id} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50">Reject</button>
-                  </div>
-                )}
-                {t.status === 'approved' && (
-                  <button onClick={() => act(t.id, 'rejected')} disabled={acting === t.id} className="px-3 py-1.5 text-xs text-gray-400 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 flex-shrink-0">Unpublish</button>
-                )}
-                {t.status === 'rejected' && (
-                  <button onClick={() => act(t.id, 'approved')} disabled={acting === t.id} className="px-3 py-1.5 text-xs text-white rounded disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: '#c9a84c' }}>Approve</button>
-                )}
+
+                <div className="flex gap-2 flex-shrink-0 items-start">
+                  {t.status === 'pending' && (
+                    <>
+                      <button onClick={() => act(t.id, 'approved')} disabled={acting === t.id} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white rounded transition-opacity hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#0c1f3f' }}>Approve</button>
+                      <button onClick={() => act(t.id, 'rejected')} disabled={acting === t.id} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50">Reject</button>
+                    </>
+                  )}
+                  {t.status === 'approved' && (
+                    <button onClick={() => act(t.id, 'rejected')} disabled={acting === t.id} className="px-3 py-2 text-xs text-gray-400 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50">Unpublish</button>
+                  )}
+                  {t.status === 'rejected' && (
+                    <button onClick={() => act(t.id, 'approved')} disabled={acting === t.id} className="px-3 py-2 text-xs text-white rounded disabled:opacity-50" style={{ backgroundColor: '#c9a84c' }}>Approve</button>
+                  )}
+                  {/* Delete button â€” always visible */}
+                  <button onClick={() => del(t.id)} disabled={acting === t.id}
+                    className="px-3 py-2 text-xs text-red-400 bg-red-50 rounded hover:bg-red-100 disabled:opacity-50"
+                    title="Delete permanently">
+                    âœ•
+                  </button>
+                </div>
               </div>
             </div>
           ))}
