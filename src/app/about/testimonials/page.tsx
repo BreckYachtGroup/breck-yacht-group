@@ -66,7 +66,7 @@ export default function TestimonialsPage() {
 
         {/* Approved testimonials */}
         {loading ? (
-          <div className="text-center text-gray-400 py-12 text-sm tracking-widest uppercase">Loadingâ€¦</div>
+          <div className="text-center text-gray-400 py-12 text-sm tracking-widest uppercase">Loading...</div>
         ) : testimonials.length === 0 ? (
           <div className="text-center text-gray-400 py-8 text-sm">
             Be the first to share your experience.
@@ -123,7 +123,7 @@ export default function TestimonialsPage() {
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <button type="submit" disabled={submitting} className="w-full py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#0c1f3f' }}>
-                {submitting ? 'Submittingâ€¦' : 'Submit Testimonial'}
+                {submitting ? 'Submitting...' : 'Submit Testimonial'}
               </button>
               <p className="text-center text-xs text-gray-400">Testimonials are reviewed before being published.</p>
             </form>
