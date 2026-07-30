@@ -119,7 +119,7 @@ export default function TestimonialsPage() {
               </div>
               <div>
                 <label className={labelCls}>Your Testimonial *</label>
-                <textarea required value={form.content} onChange={e => set('content', e.target.value)} placeholder="Tell us about your experience working with Breck Yacht Groupâ€¦" rows={5} className={`${inputCls} resize-none`} />
+                <textarea required value={form.content} onChange={e => set('content', e.target.value)} placeholder="Tell us about your experience working with Breck Yacht Group…" rows={5} className={`${inputCls} resize-none`} />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <button type="submit" disabled={submitting} className="w-full py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#0c1f3f' }}>
@@ -134,3 +134,4 @@ export default function TestimonialsPage() {
     </div>
   )
 }
+
