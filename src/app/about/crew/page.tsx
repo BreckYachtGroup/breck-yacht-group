@@ -10,7 +10,7 @@ const crew = [
   {
     name: 'Dalton Hustad',
     title: 'Licensed Marine Sales Professional',
-    bio: 'Bio coming soon.',
+    bio: 'Dalton brings over two years of dedicated experience in yacht sales, combining a genuine passion for boating with a client-first approach to every transaction. Since joining Breck Yacht Group, Dalton has built a reputation for attentive service, clear communication, and a thorough understanding of the buying and selling process, guiding clients confidently from first inquiry to closing. Whether working with first-time buyers or seasoned yacht owners, Dalton is committed to making every experience smooth, informed, and tailored to each client\u0027s goals. Reach out to Dalton to start your next chapter on the water.',
     photo: '/dalton-hustad.png',
   },
   // Add more crew members here
@@ -55,5 +55,6 @@ export default function CrewPage() {
     </div>
   )
 }
+
 
 
