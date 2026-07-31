@@ -11,7 +11,7 @@ const crew = [
     name: 'Dalton Hustad',
     title: 'Licensed Marine Sales Professional',
     bio: 'Bio coming soon.',
-    photo: '',
+    photo: '/dalton-hustad.png',
   },
   // Add more crew members here
 ]
