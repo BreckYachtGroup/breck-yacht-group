@@ -1,4 +1,4 @@
-// Crew page — add your team members to the `crew` array below
+﻿// Crew page â€” add your team members to the `crew` array below
 
 const crew = [
   {
@@ -6,6 +6,12 @@ const crew = [
     title: 'Founder & Lead Broker',
     bio: 'I am a professional yacht broker and entrepreneur in Palm Beach, Florida. As a qualified yacht broker, I plan to establish myself as the tech-forward leader in the luxury vessel market. My career is defined by my deep understanding of boat performance, valuation, and restoration. I have spent significant time working on and running high-performance center consoles and luxury yachts. I have launched Breck Yacht Group as a hybrid platform designed to bridge the gap between traditional white-glove brokerage services and the efficiency of high-volume online boat sales.',
     photo: 'https://i.imgur.com/qzLnErw.jpg',
+  },
+  {
+    name: 'Dalton Hustad',
+    title: 'Licensed Marine Sales Professional',
+    bio: 'Bio coming soon.',
+    photo: '',
   },
   // Add more crew members here
 ]
@@ -49,3 +55,4 @@ export default function CrewPage() {
     </div>
   )
 }
+
