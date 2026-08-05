@@ -7,6 +7,7 @@
 
 import { Resend }       from 'resend'
 import { NextRequest, NextResponse } from 'next/server'
+import { escapeHtml } from '@/lib/html-escape'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -34,7 +35,14 @@ export async function POST(req: NextRequest) {
       territory,      // where they work
       pitch,          // why they want to join
       turnstileToken,
+      website,        // honeypot
     } = await req.json()
+
+    // Honeypot — real users never fill this hidden field; bots that
+    // auto-fill every input will. Pretend success so the bot doesn't adapt.
+    if (website) {
+      return NextResponse.json({ success: true })
+    }
 
     if (!name?.trim() || !email?.trim() || !phone?.trim()) {
       return NextResponse.json({ error: 'Name, email, and phone are required.' }, { status: 400 })
@@ -49,31 +57,31 @@ export async function POST(req: NextRequest) {
       from:    'Breck Yacht Group <leads@breckyachtgroup.com>',
       to:      'austin@breckyachtgroup.com',
       replyTo: email,
-      subject: `New Sales Application — ${name}`,
+      subject: `New Sales Application — ${escapeHtml(name)}`,
       html: `
         <h2 style="color:#0c1f3f;">New Sales Associate Application</h2>
 
         <table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:14px;">
           <tr><td style="padding:8px 0;color:#666;width:160px;">Name</td>
-              <td style="padding:8px 0;font-weight:bold;">${name}</td></tr>
+              <td style="padding:8px 0;font-weight:bold;">${escapeHtml(name)}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Email</td>
-              <td style="padding:8px 0;"><a href="mailto:${email}">${email}</a></td></tr>
+              <td style="padding:8px 0;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
           <tr><td style="padding:8px 0;color:#666;">Phone</td>
-              <td style="padding:8px 0;">${phone}</td></tr>
+              <td style="padding:8px 0;">${escapeHtml(phone)}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">FL License</td>
               <td style="padding:8px 0;">${licensed === 'yes' ? '✓ Licensed' : 'Not yet licensed'}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Experience</td>
-              <td style="padding:8px 0;">${experience || '—'}</td></tr>
+              <td style="padding:8px 0;">${escapeHtml(experience) || '—'}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Marine Background</td>
-              <td style="padding:8px 0;">${marine || '—'}</td></tr>
+              <td style="padding:8px 0;">${escapeHtml(marine) || '—'}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Territory</td>
-              <td style="padding:8px 0;">${territory || '—'}</td></tr>
+              <td style="padding:8px 0;">${escapeHtml(territory) || '—'}</td></tr>
         </table>
 
         <hr style="border:none;border-top:1px solid #eee;margin:20px 0;" />
 
         <p style="color:#666;font-size:13px;margin-bottom:6px;">Why they want to join:</p>
-        <p style="font-size:14px;line-height:1.6;">${pitch || '—'}</p>
+        <p style="font-size:14px;line-height:1.6;">${escapeHtml(pitch) || '—'}</p>
       `,
     })
 

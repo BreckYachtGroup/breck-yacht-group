@@ -35,6 +35,7 @@ export default function CareersClient() {
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
     licensed: '', experience: '', marine: '', territory: '', pitch: '',
+    website: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitted,  setSubmitted]  = useState(false)
@@ -221,6 +222,17 @@ export default function CareersClient() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="bg-white p-8 shadow-sm space-y-6">
+              {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+              <input
+                type="text"
+                name="website"
+                value={form.website}
+                onChange={e => set('website', e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>

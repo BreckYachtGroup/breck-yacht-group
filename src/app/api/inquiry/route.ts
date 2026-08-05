@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { NextRequest, NextResponse } from 'next/server'
+import { escapeHtml } from '@/lib/html-escape'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -19,7 +20,13 @@ async function verifyTurnstile(token: string): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, phone, message, vesselName, turnstileToken } = await req.json()
+    const { name, email, phone, message, vesselName, turnstileToken, website } = await req.json()
+
+    // Honeypot — real users never fill this hidden field; bots that
+    // auto-fill every input will. Pretend success so the bot doesn't adapt.
+    if (website) {
+      return NextResponse.json({ success: true })
+    }
 
     // Block submission if Turnstile verification fails
     if (!turnstileToken || !(await verifyTurnstile(turnstileToken))) {
@@ -30,15 +37,15 @@ export async function POST(req: NextRequest) {
       from: 'Breck Yacht Group <leads@breckyachtgroup.com>',
       to: 'austin@breckyachtgroup.com',
       replyTo: email,
-      subject: `New Inquiry — ${name} | ${vesselName}`,
+      subject: `New Inquiry — ${escapeHtml(name)} | ${escapeHtml(vesselName)}`,
       html: `
         <h2>New Vessel Inquiry</h2>
-        <p><strong>Vessel:</strong> ${vesselName}</p>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Vessel:</strong> ${escapeHtml(vesselName)}</p>
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
         <p><strong>Message:</strong></p>
-        <p>${message}</p>
+        <p>${escapeHtml(message)}</p>
       `,
     })
 

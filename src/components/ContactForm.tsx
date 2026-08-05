@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 export default function ContactForm() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', message: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', message: '', website: '' })
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetId = useRef<string | null>(null)
@@ -43,7 +43,7 @@ export default function ContactForm() {
       })
       if (res.ok) {
         setStatus('success')
-        setForm({ firstName: '', lastName: '', email: '', phone: '', message: '' })
+        setForm({ firstName: '', lastName: '', email: '', phone: '', message: '', website: '' })
         ;(window as any).turnstile?.reset(widgetId.current)
       } else {
         setStatus('error')
@@ -57,6 +57,17 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+      {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+      <input
+        type="text"
+        name="website"
+        value={form.website}
+        onChange={(e) => setForm({ ...form, website: e.target.value })}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input
           type="text" placeholder="First Name" required value={form.firstName}

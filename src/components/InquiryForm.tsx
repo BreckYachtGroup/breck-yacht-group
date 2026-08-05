@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 export default function InquiryForm({ vesselName }: { vesselName: string }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: `I'm interested in the ${vesselName}.` })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: `I'm interested in the ${vesselName}.`, website: '' })
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const turnstileRef = useRef<HTMLDivElement>(null)
   const widgetId = useRef<string | null>(null)
@@ -79,6 +79,17 @@ export default function InquiryForm({ vesselName }: { vesselName: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+      <input
+        type="text"
+        name="website"
+        value={form.website}
+        onChange={(e) => setForm({ ...form, website: e.target.value })}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+      />
       <input
         type="text" placeholder="Your Name" required value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}

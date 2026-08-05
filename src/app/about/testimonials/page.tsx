@@ -1,6 +1,8 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 interface Testimonial {
   id: string
@@ -16,10 +18,12 @@ const labelCls = "block text-xs font-semibold uppercase tracking-wider text-gray
 export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name: '', email: '', title: '', content: '' })
+  const [form, setForm] = useState({ name: '', email: '', title: '', content: '', website: '' })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const turnstileRef = useRef<HTMLDivElement>(null)
+  const widgetId = useRef<string | null>(null)
 
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }))
 
@@ -30,10 +34,36 @@ export default function TestimonialsPage() {
       .catch(() => setLoading(false))
   }, [])
 
+  // Load Turnstile script and render widget
+  useEffect(() => {
+    const scriptId = 'cf-turnstile-script'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+      script.async = true; script.defer = true
+      document.head.appendChild(script)
+    }
+    const render = () => {
+      if (turnstileRef.current && (window as any).turnstile && !widgetId.current) {
+        widgetId.current = (window as any).turnstile.render(turnstileRef.current, { sitekey: SITE_KEY, theme: 'light' })
+      }
+    }
+    if ((window as any).turnstile) { render() } else {
+      const interval = setInterval(() => { if ((window as any).turnstile) { render(); clearInterval(interval) } }, 100)
+      return () => clearInterval(interval)
+    }
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name.trim() || !form.content.trim()) {
       setError('Please fill in your name and testimonial.')
+      return
+    }
+    const token = (window as any).turnstile?.getResponse(widgetId.current)
+    if (!token) {
+      setError('Please complete the CAPTCHA verification.')
       return
     }
     setSubmitting(true)
@@ -41,7 +71,7 @@ export default function TestimonialsPage() {
     const res = await fetch('/api/testimonials', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, turnstileToken: token }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -49,6 +79,7 @@ export default function TestimonialsPage() {
     } else {
       const data = await res.json()
       setError(data.error || 'Something went wrong. Please try again.')
+      ;(window as any).turnstile?.reset(widgetId.current)
     }
   }
 
@@ -103,6 +134,17 @@ export default function TestimonialsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="bg-white p-8 shadow-sm space-y-6">
+              {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+              <input
+                type="text"
+                name="website"
+                value={form.website}
+                onChange={e => set('website', e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className={labelCls}>Full Name *</label>
@@ -121,6 +163,8 @@ export default function TestimonialsPage() {
                 <label className={labelCls}>Your Testimonial *</label>
                 <textarea required value={form.content} onChange={e => set('content', e.target.value)} placeholder="Tell us about your experience working with Breck Yacht Group…" rows={5} className={`${inputCls} resize-none`} />
               </div>
+              <div ref={turnstileRef} />
+
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <button type="submit" disabled={submitting} className="w-full py-4 text-sm tracking-widest uppercase font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#0c1f3f' }}>
                 {submitting ? 'Submitting...' : 'Submit Testimonial'}

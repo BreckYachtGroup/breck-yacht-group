@@ -1,14 +1,15 @@
-﻿/**
+/**
  * /api/testimonials
  *
- * GET  â€” returns all approved testimonials (public)
- * POST â€” submits a new testimonial for review (public)
+ * GET  — returns all approved testimonials (public)
+ * POST — submits a new testimonial for review (public)
  *        Sends Austin an email notification on each new submission.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { escapeHtml } from '@/lib/html-escape'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +17,20 @@ const supabase = createClient(
 )
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+// Verify Turnstile token with Cloudflare
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      secret: process.env.TURNSTILE_SECRET_KEY,
+      response: token,
+    }),
+  })
+  const data = await res.json()
+  return data.success === true
+}
 
 export async function GET() {
   const { data, error } = await supabase
@@ -33,7 +48,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, title, content } = await req.json()
+    const { name, email, title, content, turnstileToken, website } = await req.json()
+
+    // Honeypot — real users never fill this hidden field; bots that
+    // auto-fill every input will. Pretend success so the bot doesn't adapt.
+    if (website) {
+      return NextResponse.json({ success: true })
+    }
 
     if (!name?.trim() || !content?.trim()) {
       return NextResponse.json(
@@ -49,6 +70,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Block submission if Turnstile verification fails
+    if (!turnstileToken || !(await verifyTurnstile(turnstileToken))) {
+      return NextResponse.json({ error: 'CAPTCHA verification failed' }, { status: 400 })
+    }
+
     const { error: insertError } = await supabase
       .from('testimonials')
       .insert({ name: name.trim(), email: email?.trim() || null, title: title?.trim() || null, content: content.trim() })
@@ -61,19 +87,19 @@ export async function POST(req: NextRequest) {
     await resend.emails.send({
       from: 'Breck Yacht Group <leads@breckyachtgroup.com>',
       to:   'austin@breckyachtgroup.com',
-      subject: `New Testimonial Pending Review â€” ${name}`,
+      subject: `New Testimonial Pending Review — ${escapeHtml(name)}`,
       html: `
         <h2 style="color:#0c1f3f;">New Testimonial Submission</h2>
         <table style="font-family:sans-serif;font-size:14px;width:100%;border-collapse:collapse;">
           <tr><td style="padding:8px 0;color:#666;width:120px;">Name</td>
-              <td style="padding:8px 0;font-weight:bold;">${name}</td></tr>
+              <td style="padding:8px 0;font-weight:bold;">${escapeHtml(name)}</td></tr>
           ${email ? `<tr><td style="padding:8px 0;color:#666;">Email</td>
-              <td style="padding:8px 0;">${email}</td></tr>` : ''}
+              <td style="padding:8px 0;">${escapeHtml(email)}</td></tr>` : ''}
           ${title ? `<tr><td style="padding:8px 0;color:#666;">Title</td>
-              <td style="padding:8px 0;">${title}</td></tr>` : ''}
+              <td style="padding:8px 0;">${escapeHtml(title)}</td></tr>` : ''}
         </table>
         <div style="margin-top:16px;padding:16px;background:#f8f6f1;border-left:3px solid #c9a84c;">
-          <p style="font-size:15px;line-height:1.7;margin:0;">${content}</p>
+          <p style="font-size:15px;line-height:1.7;margin:0;">${escapeHtml(content)}</p>
         </div>
         <p style="margin-top:24px;">
           <a href="https://www.breckyachtgroup.com/admin" style="background:#0c1f3f;color:#fff;padding:10px 20px;text-decoration:none;font-family:sans-serif;font-size:13px;">

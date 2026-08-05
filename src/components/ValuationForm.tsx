@@ -7,7 +7,7 @@ const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 export default function ValuationForm() {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
-    year: '', make: '', model: '', length: '', hours: '', engines: '', location: '', notes: ''
+    year: '', make: '', model: '', length: '', hours: '', engines: '', location: '', notes: '', website: ''
   })
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const turnstileRef = useRef<HTMLDivElement>(null)
@@ -49,7 +49,7 @@ export default function ValuationForm() {
       })
       if (res.ok) {
         setStatus('success')
-        setForm({ firstName: '', lastName: '', email: '', phone: '', year: '', make: '', model: '', length: '', hours: '', engines: '', location: '', notes: '' })
+        setForm({ firstName: '', lastName: '', email: '', phone: '', year: '', make: '', model: '', length: '', hours: '', engines: '', location: '', notes: '', website: '' })
         ;(window as any).turnstile?.reset(widgetId.current)
       } else {
         setStatus('error')
@@ -63,6 +63,17 @@ export default function ValuationForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Honeypot — hidden from real users via CSS, bots that auto-fill every field will trip it */}
+      <input
+        type="text"
+        name="website"
+        value={form.website}
+        onChange={(e) => setForm({ ...form, website: e.target.value })}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input type="text" placeholder="First Name" required value={form.firstName} onChange={set('firstName')} className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
         <input type="text" placeholder="Last Name" required value={form.lastName} onChange={set('lastName')} className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-gray-400" />
