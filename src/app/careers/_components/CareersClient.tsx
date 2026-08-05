@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 const inputCls = "w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-gray-400 bg-white rounded"
 const labelCls = "block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5"
@@ -37,13 +39,41 @@ export default function CareersClient() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted,  setSubmitted]  = useState(false)
   const [error,      setError]      = useState('')
+  const turnstileRef = useRef<HTMLDivElement>(null)
+  const widgetId = useRef<string | null>(null)
 
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }))
+
+  // Load Turnstile script and render widget
+  useEffect(() => {
+    const scriptId = 'cf-turnstile-script'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+      script.async = true; script.defer = true
+      document.head.appendChild(script)
+    }
+    const render = () => {
+      if (turnstileRef.current && (window as any).turnstile && !widgetId.current) {
+        widgetId.current = (window as any).turnstile.render(turnstileRef.current, { sitekey: SITE_KEY, theme: 'light' })
+      }
+    }
+    if ((window as any).turnstile) { render() } else {
+      const interval = setInterval(() => { if ((window as any).turnstile) { render(); clearInterval(interval) } }, 100)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name || !form.email || !form.phone || !form.licensed) {
       setError('Please fill in all required fields.')
+      return
+    }
+    const token = (window as any).turnstile?.getResponse(widgetId.current)
+    if (!token) {
+      setError('Please complete the CAPTCHA verification.')
       return
     }
     setSubmitting(true)
@@ -52,7 +82,7 @@ export default function CareersClient() {
     const res = await fetch('/api/careers', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(form),
+      body:    JSON.stringify({ ...form, turnstileToken: token }),
     })
 
     setSubmitting(false)
@@ -60,6 +90,7 @@ export default function CareersClient() {
       setSubmitted(true)
     } else {
       setError('Something went wrong. Please email us directly at austin@breckyachtgroup.com.')
+      ;(window as any).turnstile?.reset(widgetId.current)
     }
   }
 
@@ -260,6 +291,8 @@ export default function CareersClient() {
                   rows={4}
                   className={`${inputCls} resize-none`} />
               </div>
+
+              <div ref={turnstileRef} />
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
 
