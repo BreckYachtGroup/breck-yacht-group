@@ -79,19 +79,26 @@ function SearchSelect({ placeholder, value, onChange, children }: {
   )
 }
 
+// Shape returned by both /api/vessels and the server-rendered initial fetch
+type ListingsPage = { listings: Listing[]; total: number; lastPage: number; currentPage: number }
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function InventorySearch() {
+// initialData is fetched server-side by the /inventory page for the
+// default (or deep-linked) view so Googlebot sees real listing links in the
+// raw HTML instead of an empty loading shell. When present, it seeds state
+// directly and the mount-triggered fetch below is skipped once.
+export default function InventorySearch({ initialData }: { initialData?: ListingsPage }) {
   const searchParams = useSearchParams()
   const router       = useRouter()
   const { user }     = useAuth()
 
   // Vessel results
-  const [vessels,     setVessels]     = useState<Listing[]>([])
-  const [currentPage, setCurrentPage] = useState(0)
-  const [lastPage,    setLastPage]    = useState(1)
-  const [total,       setTotal]       = useState(0)
-  const [loading,     setLoading]     = useState(true)
+  const [vessels,     setVessels]     = useState<Listing[]>(initialData?.listings ?? [])
+  const [currentPage, setCurrentPage] = useState(initialData?.currentPage ?? 0)
+  const [lastPage,    setLastPage]    = useState(initialData?.lastPage ?? 1)
+  const [total,       setTotal]       = useState(initialData?.total ?? 0)
+  const [loading,     setLoading]     = useState(!initialData)
   const [loadingMore, setLoadingMore] = useState(false)
 
   // Meta dropdowns
@@ -275,7 +282,13 @@ export default function InventorySearch() {
     finally { setLoading(false); setLoadingMore(false) }
   }, [buildParams])
 
-  useEffect(() => { fetchListings(1, true) }, [fetchListings])
+  // Skip the very first mount-triggered fetch when the server already
+  // rendered this exact view — avoids a pointless refetch + loading flash.
+  const skipInitialFetch = useRef(Boolean(initialData))
+  useEffect(() => {
+    if (skipInitialFetch.current) { skipInitialFetch.current = false; return }
+    fetchListings(1, true)
+  }, [fetchListings])
 
   const filtersKey = JSON.stringify({ f, showOwn })
   const isFirstRender = useRef(true)

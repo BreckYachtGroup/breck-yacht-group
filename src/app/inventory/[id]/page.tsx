@@ -19,6 +19,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${vessel.year} ${vessel.name} for Sale | Breck Yacht Group`,
     description: `${vessel.year} ${vessel.make} ${vessel.model}, ${vessel.length_ft}ft${vessel.hours ? `, ${vessel.hours.toLocaleString()} hours` : ''}. Located in ${vessel.location}. Asking $${vessel.price.toLocaleString()}. Contact Breck Yacht Group in Palm Beach, FL.`,
+    alternates: {
+      canonical: `/inventory/${id}`,
+    },
     openGraph: {
       title: `${vessel.year} ${vessel.name} for Sale`,
       description: `${vessel.year} ${vessel.make} ${vessel.model} — $${vessel.price.toLocaleString()} — ${vessel.location}`,

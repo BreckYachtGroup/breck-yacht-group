@@ -251,6 +251,31 @@ export function normalizeYachtBrokerListing(raw: any): Listing {
   }
 }
 
+// Used by both /api/vessels (client-side pagination/filtering) and the
+// inventory server page (initial server-rendered page, for crawlability).
+// Keeping this in one place avoids the two call sites drifting apart.
+export async function getPaginatedListings(params: URLSearchParams): Promise<{
+  listings: Listing[]
+  total: number
+  lastPage: number
+  currentPage: number
+}> {
+  try {
+    const res = await fetch(`${PROXY_URL}/listings?${params.toString()}`, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
+    const data = await res.json()
+    const listings: Listing[] = (data['V-Data'] ?? []).map(normalizeYachtBrokerListing)
+    return {
+      listings,
+      total: data.total ?? 0,
+      lastPage: data.last_page ?? 1,
+      currentPage: Number(params.get('page') || '1'),
+    }
+  } catch {
+    return { listings: [], total: 0, lastPage: 1, currentPage: 1 }
+  }
+}
+
 // ── Supabase fallback ─────────────────────────────────────────────────────────
 
 async function fetchFromSupabase(): Promise<Listing[]> {

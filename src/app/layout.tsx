@@ -9,9 +9,13 @@ import MetaPixel from '@/components/MetaPixel'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.breckyachtgroup.com'),
   manifest: '/manifest.json',
   title: 'Breck Yacht Group | Luxury Performance Vessels',
   description: 'Premium yacht brokerage specializing in luxury center consoles and sportfish vessels.',
+  alternates: {
+    canonical: '/',
+  },
   verification: {
     google: 'WZWZICCJm0Mz9BqL2h0bIiq5o7wBCeTCXPnNC2OrBHE',
   },

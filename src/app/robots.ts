@@ -14,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://breckyachtgroup.com/sitemap.xml',
+    sitemap: 'https://www.breckyachtgroup.com/sitemap.xml',
   }
 }
