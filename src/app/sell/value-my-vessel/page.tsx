@@ -645,6 +645,7 @@ export default function ValueMyVesselPage() {
           engines:   [form.engine_count, form.engine_make, form.engine_model].filter(Boolean).join(' '),
           location:  '',
           notes:     `AI Estimate — Conservative $${result.low.toLocaleString()} / Mid $${result.mid.toLocaleString()} / High $${result.high.toLocaleString()}. Confidence: ${result.confidence}. Comps: ${result.comp_count}.`,
+          turnstileToken: token,
         }),
       })
       if (!emailRes.ok) { setGateError('Failed to send — please check your email and try again.'); ;(window as any).turnstile?.reset(gateWidgetId.current); return }
