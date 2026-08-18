@@ -31,7 +31,7 @@ const TIERS = [
   },
 ]
 
-export default function CareersClient() {
+export default function CareersClient({ coBrokerageCount = 8200 }: { coBrokerageCount?: number }) {
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
     licensed: '', experience: '', marine: '', territory: '', pitch: '',
@@ -153,7 +153,7 @@ export default function CareersClient() {
               },
               {
                 title: 'Co-brokerage inventory',
-                body: 'Tap into over 8,200 co-brokerage listings alongside our in-house inventory. You\'re never starting from zero.',
+                body: `Tap into over ${coBrokerageCount.toLocaleString()} co-brokerage listings alongside our in-house inventory. You're never starting from zero.`,
               },
               {
                 title: 'Back-office support',
